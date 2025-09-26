@@ -3,6 +3,9 @@ require "#{ForemanOpentofu::Engine.root}/app/services/foreman_opentofu/provider_
 require "#{ForemanOpentofu::Engine.root}/app/services/foreman_opentofu/provider_type"
 
 ForemanOpentofu::ProviderTypeManager.register('nutanix') do
+  # FIXME: Requires Nutanix-server that supports v2-API (see 'available_images')
+  # @capabilities = [:build, :image]
+
   self.provider_attrs = [
     { "name": 'cluster_uuid', "type": 'select', "group": 'vm', "mandatory": true,
       "label": 'Cluster', "options": {
@@ -13,6 +16,14 @@ ForemanOpentofu::ProviderTypeManager.register('nutanix') do
         "entity": {
           "id": 'metadata.uuid',
         },
+      } },
+    { "name": 'available_images', "type": 'select', "mandatory": true,
+      "label": 'Base-OS-Image', "options": {
+        "data_source": {
+          "name": 'nutanix_images_v2',
+        },
+        "entity": { "id": 'ext_id' },
+        "output_path_postfix": 'images',
       } },
     { "name": 'num_sockets', "type": 'number', "group": 'vm', "mandatory": false,
       "label": 'Sockets' },

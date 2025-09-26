@@ -27,12 +27,19 @@ module ForemanOpentofu
     # alias_attribute :username, :user
     # alias_attribute :endpoint, :url
 
-    delegate :available_attributes, to: :tofu_provider
+    delegate :available_attributes, :capabilities, to: :tofu_provider
+
+    def available_images
+      # make sure available_images can use this CR, e.g. for requesting data_source
+      tofu_provider.available_images(self)
+    end
 
     def provided_attributes
-      super.merge(
-        mac: :mac
-      )
+      super.merge(tofu_provider.provided_attributes || {})
+    end
+
+    def user_data_supported?
+      true
     end
 
     def opentofu_provider
@@ -61,10 +68,6 @@ module ForemanOpentofu
       'OpenTofu'
     end
 
-    def capabilities
-      [:build]
-    end
-
     def self.model_name
       ComputeResource.model_name
     end
@@ -75,6 +78,12 @@ module ForemanOpentofu
 
     def supports_update?
       true
+    end
+
+    def vm_ready(vm)
+      return tofu_provider.vm_ready(vm) if tofu_provider.respond_to? :vm_ready
+
+      vm.wait_for { ready? }
     end
 
     def tofu_provider

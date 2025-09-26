@@ -136,6 +136,27 @@ output "resources" {
 }
 ```
 
+##### Special Parameter
+
+Some config parameter names have special meanings.
+For instance, Image-based Deployment requires binding images available on the backend-service with Operating Systems configured in Foreman.
+To enable Foreman OpenTofu to display the available images, a `select`-parameter with the name `available_images` must be specified.
+It is recommended to tie this to a data-source available in the OpenTofu provider.
+
+```json
+{
+  "name": "available_images", "type": "select",
+  "options": {
+    "data_source": {
+      "name": "hcloud_images",
+      "arguments": { "with_architecture": ["x86"] }
+    },
+    "output_path_postfix": "images"
+  }
+}
+```
+
+
 #### Create Provider Type
 
 To let the Foreman OpenTofu Plugin know about your new Provider Type, one additional file has to be created in `/lib/foreman_opentofu/provider_types/`.

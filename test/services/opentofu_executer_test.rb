@@ -52,6 +52,18 @@ module ForemanOpentofu
       @executor.run_test_connection
     end
 
+    test '#run creates user_data file' do
+      executor = OpentofuExecuter.new(@compute_resource, { 'user_data' => 'HelloWorld' })
+      executor.expects(:render_template)
+      file_mock = Minitest::Mock.new
+      file_mock.expect(:write, nil, ['HelloWorld'])
+      File.stub(:open, [], file_mock) do
+        executor.run do |_tofu|
+        end
+      end
+      file_mock.verify
+    end
+
     test '#render_template raises exception if nil returned' do
       Foreman::Renderer::UnsafeModeRenderer.stubs(:render).returns(nil)
       assert_raises(Foreman::Exception) { @executor.send(:render_template, 'create') }

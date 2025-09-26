@@ -47,6 +47,16 @@ module ForemanOpentofu
       reboot
     end
 
+    def vm_ip_address
+      @attributes['vm_ip_address']
+    end
+
+    def wait_for(&block)
+      # TODO: I guess we have nothing to wait for
+      # and we need to change the context of the given block
+      instance_eval(&block)
+    end
+
     private
 
     def define_dynamic_readers!

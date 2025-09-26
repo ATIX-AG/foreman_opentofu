@@ -1,4 +1,6 @@
 ForemanOpentofu::ProviderTypeManager.register('ovirt') do
+  @capabilities = [:build]
+
   self.provider_attrs = [
     { "name": 'clone', "type": 'bool', "group": 'vm' },
     { "name": 'cluster_id', "type": 'string', "group": 'vm' },

@@ -33,6 +33,17 @@ Metrics/BlockLength:
     - lib/foreman_opentofu/engine.rb
     - lib/foreman_opentofu/provider_types/*.rb
 
+Minitest/AssertEmptyLiteral:
+  Enabled: false
+
+Naming/MethodParameterName:
+  AllowedNames:
+    - 'id'
+    - 'vm'
+
 # Don't enforce frozen string literals
 Style/FrozenStringLiteralComment:
   Enabled: false
+
+Style/SymbolArray:
+  EnforcedStyle: 'brackets'

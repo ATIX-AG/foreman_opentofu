@@ -5,3 +5,7 @@ Naming/MethodName:
 
 Layout/LineLength:
   Max: 199
+
+Style/FormatStringToken:
+  Exclude:
+    - 'app/models/concerns/orchestration/tofu/compute.rb'

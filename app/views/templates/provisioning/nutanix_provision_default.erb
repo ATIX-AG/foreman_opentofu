@@ -32,6 +32,19 @@ resource "nutanix_virtual_machine" "vm" {
   name         = "<%= @host_name %>"
 
   <%= vm_attributes(['name']) %>
+
+  <%- if @cr_attrs['image_id'].present? %>
+  <%- if @cr_attrs['user_data'].present? %>
+  guest_customization_cloud_init_user_data = base64encode("<%= @cr_attrs['user_data']) %>")
+  <%- end %>
+  disk_list {
+    data_source_reference = {
+      kind = "image"
+      uuid = "<%= @cr_attrs['image_id'] %>"
+      # name = "<%= @cr_attrs['image_name'] %>"
+    }
+  }
+  <%- end %>
 }
 
 output "vm_attrs" {
