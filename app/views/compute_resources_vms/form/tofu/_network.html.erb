@@ -1,0 +1,5 @@
+<% provider = compute_resource.opentofu_provider.to_s %>
+<% if CR_ATTRS.key?(provider) %>
+  <% nic_attrs = CR_ATTRS[provider].select { |a| a["group"] == "nic" } %>
+  <%= render :partial => provider_partial(compute_resource, "dynamic_attrs"), :locals => { f: f, attrs: nic_attrs, options: ForemanOpentofu::ComputeFetcher.fetch_subnets(compute_resource) } %>
+<% end %>

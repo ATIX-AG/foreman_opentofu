@@ -1,0 +1,7 @@
+
+Naming/MethodName:
+  Exclude:
+    - 'app/models/concerns/orchestration/*/compute.rb'
+
+Layout/LineLength:
+  Max: 199

@@ -1,0 +1,9 @@
+<%= field_set_tag _("Common fields"), :id => "compute_ressource_common_field_set" do %>
+  <%= select_f f, :opentofu_provider, ForemanOpentofu::ProviderTypeManager.enabled_provider_types, :id, :name %>
+  <%= text_f f, :url, :help_block => _("127.0.0.1") %>
+  <%= text_f f, :user , :help_block => _("e.g. admin") %>
+  <%= password_f f, :password  %>
+<% end %>
+<div class="col-md-offset-2">
+  <%= test_connection_button_f(f, (true)) %>
+</div>

@@ -1,0 +1,18 @@
+[
+  { "name": "clone", "type": "bool", "group": "vm" },
+  { "name": "cluster_id", "type": "string", "group": "vm" },
+  { "name": "cpu_cores", "type": "number", "group": "vm" },
+  { "name": "cpu_mode", "type": "string", "group": "vm" },
+  { "name": "cpu_sockets", "type": "number", "group": "vm" },
+  { "name": "cpu_threads", "type": "number", "group": "vm" },
+  { "name": "id", "type": "string", "group": "vm" },
+  { "name": "maximum_memory", "type": "number", "group": "vm" },
+  { "name": "memory", "type": "number", "group": "vm" },
+  { "name": "memory_ballooning", "type": "bool", "group": "vm" },
+  { "name": "name", "type": "string", "group": "vm" },
+  { "name": "os_type", "type": "string", "group": "vm" },
+  { "name": "soundcard_enabled", "type": "bool", "group": "vm" },
+  { "name": "template_id", "type": "string", "group": "vm" },
+  { "name": "vm_type", "type": "string", "group": "vm" }
+]
+

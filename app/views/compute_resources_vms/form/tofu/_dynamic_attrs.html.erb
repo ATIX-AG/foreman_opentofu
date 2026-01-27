@@ -1,0 +1,18 @@
+<% attrs.each do |attr|
+  label = attr.fetch('label', attr['name'].humanize) %>
+
+  <% case attr["type"] %>
+  <% when 'string' %>
+    <%= text_f f, attr["name"].to_sym, label: _(label), label_help: attr['help'] %>
+  <% when 'bool' %>
+    <%= checkbox_f f, attr["name"].to_sym, label: _(label), label_help: attr['help'] %>
+  <% when 'number' %>
+    <%= counter_f f, attr["name"].to_sym, label: _(label), label_help: attr['help'] %>
+  <% when 'select' %>
+    <% if attr.key? 'options' %>
+      <%= select_f f, attr["name"].to_sym, attr.fetch('options', []), :to_s, :to_s, { :include_blank => true }, label: _(label), label_help: attr['help'] %>
+    <% else  %>
+      <%= select_f f, attr["name"].to_sym, (options || []), :id, :name, { :include_blank => true }, label: _(label), label_help: attr['help'] %>
+    <% end %>
+  <% end %>
+<% end %>

@@ -1,0 +1,13 @@
+<% provider = compute_resource.tofu_provider %>
+<% if provider.attributes.present? %>
+  <% vm_attrs   = provider.attributes('vm') %>
+  <% disk_attrs = provider.attributes('disk') %>
+  <%= field_set_tag _("VM Config") do %>
+    <%= render :partial => provider_partial(compute_resource, "dynamic_attrs"), :locals => { f: f, attrs: vm_attrs } %>
+  <% end %>
+
+  <%= field_set_tag _("Storage") do %>
+    <%= render :partial => provider_partial(compute_resource, "dynamic_attrs"), :locals => { f: f, attrs: disk_attrs } %>
+  <% end %>
+<% end %>
+

@@ -1,0 +1,37 @@
+inherit_gem:
+  theforeman-rubocop:
+    - default.yml
+
+inherit_from:
+  - .rubocop_todo.yml
+
+AllCops:
+  Exclude:
+    - foreman/**/*
+    - node_modules/**/*
+    - Gemfile
+    - vendor/**/*
+    - webpack/**/*
+  Include:
+    - '**/*.rb'
+    - 'app/views/**/*.rabl'
+    - '**/*.rake'
+    - '*.gemspec'
+  TargetRubyVersion: 2.7
+
+Metrics/AbcSize:
+  Max: 25
+
+Metrics/ClassLength:
+  Max: 400
+
+Metrics/MethodLength:
+  Max: 40
+
+Metrics/BlockLength:
+  Exclude:
+    - lib/foreman_opentofu/engine.rb
+
+# Don't enforce frozen string literals
+Style/FrozenStringLiteralComment:
+  Enabled: false

@@ -1,0 +1,68 @@
+#!/bin/bash
+<%#
+kind: script
+name: Ovirt provision - host
+model: ProvisioningTemplate
+description: |
+  nutanix opentofu script to create vm resource
+-%>
+<%-
+host_name = @cr_attrs['name'] || 'test'
+%>
+
+terraform {
+  required_providers {
+    ovirt = {
+      source = "ovirt/ovirt"
+    }
+  }
+  <% if @use_backend %>
+    backend "http" {
+      address        = "<%= Setting[:foreman_url] %>/api/v2/tf_states/<%= host_name %>"
+      username       = "admin"
+      password       = "changeme"
+    }
+  <% end %>
+}
+
+provider "ovirt" {
+  username = "<%= @compute_resource['user'] %>"
+  password = "<%= @compute_resource['password'] %>"
+  url = "<%= @compute_resource['url'] %>"
+  tls_insecure = true
+}
+
+data "ovirt_blank_template" "blank" {
+}
+
+resource "ovirt_vm" "vm" {
+  name        = "<%= host_name %>"
+  cluster_id  = "2ad616ea-4b66-11f0-964d-901b0ecbd584"
+  template_id = data.ovirt_blank_template.blank.id
+  cpu_cores   = <%= @cr_attrs['cpu_cores'] || 1 %>
+  cpu_sockets = <%= @cr_attrs['cpu_sockets'] || 1 %>
+  cpu_threads = <%= @cr_attrs['cpu_threads'] || 1 %>
+  memory      = <%= @cr_attrs['memory'] || 400000 %>
+  maximum_memory = <%= @cr_attrs['maximum_memory'] || 4000000 %>
+  memory_ballooning = <%= @cr_attrs['memory_ballooning'] || false %>
+}
+resource "ovirt_vm" "vm" {
+  name        = "<%= host_name %>"
+  cluster_id  = "2ad616ea-4b66-11f0-964d-901b0ecbd584"
+  template_id = data.ovirt_blank_template.blank.id
+  <%= "cpu_cores = #{@cr_attrs['cpu_cores'] || 1}" %>
+  <%= "cpu_sockets = #{@cr_attrs['cpu_sockets'] || 1}" %>
+  <%= "cpu_threads = #{@cr_attrs['cpu_threads'] || 1}" %>
+  <%= "cpu_mode = \"#{@cr_attrs['cpu_mode']}\"" if @cr_attrs['cpu_mode'].present? %>
+  <%= "memory = #{@cr_attrs['memory'] || 400000}" %>
+  <%= "maximum_memory = #{@cr_attrs['maximum_memory'] || 4000000}" %>
+  <%= "memory_ballooning = #{@cr_attrs['memory_ballooning']}" if @cr_attrs.key?('memory_ballooning') %>
+  <%= "id = \"#{@cr_attrs['id']}\"" if @cr_attrs['id'].present? %>
+  <%= "os_type = \"#{@cr_attrs['os_type']}\"" if @cr_attrs['os_type'].present? %>
+  <%= "soundcard_enabled = #{@cr_attrs['soundcard_enabled']}" if @cr_attrs.key?('soundcard_enabled') %>
+  <%= "vm_type = \"#{@cr_attrs['vm_type']}\"" if @cr_attrs['vm_type'].present? %>
+}
+
+output "uuid" {
+  value = ovirt_vm.vm
+}

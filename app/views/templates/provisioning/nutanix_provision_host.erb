@@ -1,0 +1,51 @@
+#!/bin/bash
+<%#
+kind: script
+name: Nutanix provision - host
+model: ProvisioningTemplate
+description: |
+  nutanix opentofu script to create vm resource
+-%>
+<%-
+host_name = @cr_attrs['name'] || 'test'
+%>
+
+terraform {
+  required_providers {
+    nutanix = {
+      source = "nutanix/nutanix"
+    }
+  }
+  <% if @use_backend %>
+    backend "http" {
+      address        = "<%= Setting[:foreman_url] %>/api/v2/tf_states/<%= host_name %>"
+      username       = "admin"
+      password       = "changeme"
+    }
+  <% end %>
+}
+
+provider "nutanix" {
+    username = "<%= @compute_resource['user'] %>"
+    password = "<%= @compute_resource['password'] %>"
+    endpoint = "<%= @compute_resource['url'] %>"
+    insecure = true
+}
+
+data "nutanix_clusters" "clusters" {}
+
+resource "nutanix_virtual_machine" "vm" {
+  cluster_uuid = data.nutanix_clusters.clusters.entities.0.metadata.uuid
+  name         = "<%= host_name %>"
+
+  <%= vm_attributes(['name', 'cluster_uuid']) %>
+
+}
+
+output "vm_attrs" {
+  value = {
+      identity = nutanix_virtual_machine.vm.id
+      mac = nutanix_virtual_machine.vm.nic_list[0].mac_address
+  }
+}
+
