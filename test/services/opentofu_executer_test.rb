@@ -54,7 +54,7 @@ module ForemanOpentofu
 
     test '#render_template raises exception if nil returned' do
       Foreman::Renderer::UnsafeModeRenderer.stubs(:render).returns(nil)
-      assert_raises(Foreman::Exception) { @executor.send(:render_template) }
+      assert_raises(Foreman::Exception) { @executor.send(:render_template, 'create') }
     end
 
     test 'render_template with resource' do

@@ -18,6 +18,8 @@ provider "nutanix" {
 <% if @resource %>
 <%= resource_block(@resource) %>
 
+<% elsif @dry_run %>
+# nothing
 <% else %>
 
 data "nutanix_clusters" "clusters" {}
