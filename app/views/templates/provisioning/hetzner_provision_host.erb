@@ -1,0 +1,60 @@
+<%#
+kind: opentofu_script
+name: Hetzner provision default
+model: ProvisioningTemplate
+description: |
+  Hetzner OpenTofu script to create vm resource
+-%>
+
+<%= terraform_block({ hcloud: { source: 'hetznercloud/hcloud', version: '~> 1.45' } }) %>
+
+provider "hcloud" {
+  token = var.password
+}
+
+<% if @resource %>
+<%= resource_block(@resource) %>
+
+<% elsif !@dry_run %>
+# Create a new server running debian
+resource "hcloud_server" "node1" {
+  name        = "<%= @host_name %>"
+  # image       = "debian-12"
+  # server_type = "cx23"
+
+  <%= vm_attributes(['name', 'image']) %>
+
+  <%- if @cr_attrs['image_id'].present? %>
+  image = <%= @cr_attrs['image_id'] %>
+  <%- if @user_data_filename.present? %>
+    user_data = "${file("<%= @user_data_filename %>")}"
+  <%- end %>
+  <%- end %>
+
+  public_net {
+    ipv4_enabled = true
+    ipv6_enabled = true
+  }
+}
+
+output "vm_attrs" {
+  value = {
+      identity = hcloud_server.node1.id
+      vm_ip_address = hcloud_server.node1.ipv4_address
+      vm_ip6_address = hcloud_server.node1.ipv6_address
+  }
+}
+
+<% else %>
+# # get available images
+# data "hcloud_images" "all" {}
+# output "images" {
+#   value = data.hcloud_images.all.images
+# }
+#
+# # get available server types
+# data "hcloud_server_types" "all" {}
+# output "server_types" {
+#   value = data.hcloud_server_types.all.server_types
+# }
+<% end %>
