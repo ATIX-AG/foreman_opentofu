@@ -5,16 +5,36 @@ module ForemanOpentofu
     def initialize(*args)
       @compute_resource = args[0]
       @cr_attrs = args[1] || {}
+      @host_name = @cr_attrs['name'] || 'test'
     end
 
     def run(mode = 'create')
       Dir.mktmpdir('opentofu_') do |dir|
         tofu = AppWrapper.new(dir)
         @use_backend = %w[create destroy output].include?(mode)
+        @token = create_token(@host_name) if @use_backend
         tofu.main_configuration = render_template
         tofu.init
         run_mode(tofu, mode)
       end
+    end
+
+    # creates a new authentication token for the TfState API-controller
+    # needed for tofu command to send it's state-file to the database.
+    # returns the created token
+    def create_token(host_name)
+      new_token = nil
+      # This construct makes sure the token is created outside of the current transaction
+      # which is necessary for the API-controller to check the token, while the current transaction still runs
+      # see https://stackoverflow.com/a/11675647
+      Thread.new do
+        ActiveRecord::Base.connection_pool.with_connection do
+          ForemanOpentofu::Token.find_or_create_by(name: host_name) do |token|
+            new_token = token.generate_token
+          end
+        end
+      end.join
+      new_token
     end
 
     def run_mode(tofu, mode = 'new')
@@ -49,6 +69,8 @@ module ForemanOpentofu
       scope.instance_variable_set(:@compute_resource, @compute_resource)
       scope.instance_variable_set(:@cr_attrs, @cr_attrs) if @cr_attrs
       scope.instance_variable_set(:@use_backend, @use_backend)
+      scope.instance_variable_set(:@token, @token) if @use_backend
+      scope.instance_variable_set(:@host_name, @host_name)
       rendered_template = Foreman::Renderer::UnsafeModeRenderer.render(source, scope)
       raise ::Foreman::Exception, N_('Unable to render provisioning template') unless rendered_template
 
