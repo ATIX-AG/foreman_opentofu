@@ -1,10 +1,9 @@
-#!/bin/bash
 <%#
-kind: script
-name: Ovirt provision - host
+kind: opentofu_script
+name: oVirt provision default
 model: ProvisioningTemplate
 description: |
-  nutanix opentofu script to create vm resource
+  oVirt OpenTofu script to create vm resource
 -%>
 <%-
 host_name = @cr_attrs['name'] || 'test'

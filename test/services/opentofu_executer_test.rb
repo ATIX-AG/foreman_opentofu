@@ -7,7 +7,7 @@ module ForemanOpentofu
       @cr_attrs = { 'name' => 'vm-1' }
       @executor = OpentofuExecuter.new(@compute_resource, @cr_attrs)
 
-      @template = FactoryBot.create(:provisioning_template, name: Setting[:provision_nutanix_host_template])
+      @template = FactoryBot.create(:provisioning_template, name: 'Nutanix test script')
       @executor.stubs(:provision_template).returns(@template)
 
       @app_mock = mock('AppWrapper')
