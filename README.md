@@ -1,3 +1,5 @@
+[![Ruby Tests](https://github.com/ATIX-AG/foreman_opentofu/actions/workflows/ruby.yml/badge.svg)](https://github.com/ATIX-AG/foreman_opentofu/actions/workflows/ruby.yml)
+
 # ForemanOpenTOFU
 
 [Foreman](http://theforeman.org/) plugin that adds that adds a generic openTOFU-based compute resource, enabling host provisioning through openTOFU scripts instead of provider-specific SDK integrations such as fog-vsphere.
