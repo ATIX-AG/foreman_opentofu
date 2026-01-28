@@ -1,6 +1,6 @@
 module ForemanOpentofu
   class ProviderType
-    attr_reader :id, :name
+    attr_reader :id, :name, :default_attributes
 
     def initialize(id)
       @id = id.to_sym
