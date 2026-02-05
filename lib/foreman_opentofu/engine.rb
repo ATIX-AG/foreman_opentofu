@@ -1,5 +1,3 @@
-require 'deface'
-
 module ForemanOpentofu
   class Engine < ::Rails::Engine
     isolate_namespace ForemanOpentofu
