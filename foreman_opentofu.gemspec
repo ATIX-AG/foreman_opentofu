@@ -7,6 +7,7 @@ Gem::Specification.new do |s|
   s.license     = 'GPL-3.0-only'
   s.authors     = ['ATIX-AG']
   s.email       = ['info@atix.de']
+  s.homepage    = 'https://github.com/ATIX-AG/foreman_opentofu'
   s.summary     = 'Plugin to provision host using opentofu'
   # also update locale/gemspec.rb
   s.description = 'Plugin to provision host using opentofu with different compute resources'
