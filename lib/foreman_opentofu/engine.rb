@@ -48,6 +48,11 @@ module ForemanOpentofu
                 default: 'Vsphere provision - host',
                 full_name: N_('Vsphere Host provision template'),
                 description: N_('Opentofu script template to use for Vsphere based host provisioning')
+              setting 'tfstate_token_timeout',
+                type: :integer,
+                default: 600,
+                full_name: N_('TfState Token Timeout'),
+                description: N_('Number of seconds a run of Opentofu command is allowed to report tf-state back to the plugin.')
             end
           end
         end
