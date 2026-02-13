@@ -42,6 +42,20 @@ module ForemanOpentofu
       attrs[:opentofu_provider] = value
     end
 
+    def opentofu_template
+      return ProvisioningTemplate.find(attrs[:opentofu_template_id]) if attrs.key? :opentofu_template_id
+      # or default-template for this opentofu_provider
+      nil
+    end
+
+    def opentofu_template_id
+      attrs[:opentofu_template_id]
+    end
+
+    def opentofu_template_id=(value)
+      attrs[:opentofu_template_id] = value
+    end
+
     def self.provider_friendly_name
       'OpenTofu'
     end
