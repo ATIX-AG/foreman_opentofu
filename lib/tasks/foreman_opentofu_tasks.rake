@@ -7,8 +7,8 @@ namespace :foreman_opentofu do
     # details are handled in .rubocop.yml
     task.patterns = [ForemanOpentofu::Engine.root.to_s]
   end
-rescue LoadError => e
-  raise e unless Rails.env.production?
+rescue LoadError
+  # Rubocop not loaded
 end
 
 # Tests
