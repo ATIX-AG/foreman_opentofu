@@ -34,6 +34,91 @@ Provisioning workflow:
 
 Provider-specific details (for example Nutanix, Hetzner) are handled entirely through openTOFU scripts.
 
+### Create new ProviderType
+
+This Plugin empowers you to add support of a new backend VM- or Cloud-Platform yourself.
+Follow these simple steps to do so:
+
+#### Find OpenTofu Provider
+
+Visit the OpenTofu Registry to find a suitable [provider supported by OpenTofu](https://search.opentofu.org/providers).
+The Registry supplies the necessary Data Sources to read information from the Backend as well as Resources to create/update/destroy resources on the Backend.
+
+#### Create Template
+
+You may use the UI-Editor in Hosts -> Templates -> Provisioning Templates to create a new Template.
+Either clone a pre-installed template or create one from scratch.
+In the latter case be sure to select the correct Template Type: OpenTofu Script template.
+
+#### Create Parameter Config
+
+To define which Virtual Machine parameters can be set for a new Host a new config file under `/config` must be added.
+Feel free to use either YAML or JSON (be sure to end the filename with `.json` or `.yaml`).
+The config file defines an array of dicts, where each dict represents a configuration-parameter.
+
+A config-parameter has the following values:
+
+* `name`: the OpenTofu Provider Resource Arguments as stated on the OpenTofu Registry
+* `label`: the label shown in the Foreman UI
+* `type`: data-type of the value, supported values:
+  * `string`
+  * `number`
+  * `bool`
+  * `select`: requires setting `options`
+* `help`: Tooltip describing what that value does and what values are allowed
+* `mandatory`: `true`/`false` defines if omitting the value triggers an error
+* `options`: array of strings representing the possible values
+* `group`: define where the value should be configured
+   * `vm`: ones per Host in the 'Virtual Machine' tab,
+   * `disk`: for each defined disk/volume in the 'Virtual Machine' tab
+   * `nic`: for each defined network-interface on the 'Interfaces' tab
+
+A short config file might look like this:
+
+```json
+[
+  { "name": "memory_size_mib", "type": "number", "group": "vm", "mandatory": false,
+    "label": "Memory (MB)" },
+  { "name": "boot_type", "type": "select", "group": "vm", "mandatory": false,
+    "label": "Firmware", "options": [ "UEFI", "LEGACY", "SECURE_BOOT" ] },
+  { "name": "disk_size_mib", "type": "number", "group": "disk", "mandatory": true,
+    "label": "Size (MB)" },
+  { "name": "model", "type": "select", "group": "nic", "mandatory": true,
+    "options": [ "VIRTIO", "E1000" ] }
+]
+```
+
+The name of the file must be the same as the provider-type name we set in the next step (e.g. `/config/nutanix.json`).
+
+#### Create Provider Type
+
+To let the Foreman OpenTofu Plugin know about your new Provider Type, one additional file has to be created in `/lib/foreman_opentofu/provider_types/`.
+
+A very simple ProviderType file to add a new Provider named `nutanix` has to be located in `lib/foreman_opentofu/provider_types/nutanix.rb` and might look like this:
+
+```ruby
+ForemanOpentofu::ProviderTypeManager.register('nutanix') do
+end
+```
+
+Additional informations about the ProviderType can be set within the `register`-block:
+
+##### `default_attributes`
+
+Define values that should be set as default for attributes.
+The values do not have to be defined in the config-file.
+If attributes are also defined in the config-file and therefore set during Host creation, the default\_attribute values will be overwritten.
+
+```ruby
+ForemanOpentofu::ProviderTypeManager.register('nutanix') do
+  @default_attributes = {
+    'enable_cpu_passthrough' => true,
+    'num_threads_per_core' => 2,
+  }
+end
+```
+
+
 ## Development
 
 ### Dev prerequisites

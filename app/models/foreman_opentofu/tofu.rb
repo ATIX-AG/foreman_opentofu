@@ -55,7 +55,7 @@ module ForemanOpentofu
     end
 
     def default_attributes
-      {}
+      tofu_provider&.default_attributes || {}
     end
 
     def supports_update?
