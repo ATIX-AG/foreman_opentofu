@@ -1,19 +1,67 @@
-# foreman_opentofu
-#
-# This file is distributed under the same license as foreman_opentofu.
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the foreman_opentofu package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 #, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: version 0.0.1\n"
+"Project-Id-Version: foreman_opentofu 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2014-08-20 08:46+0100\n"
-"PO-Revision-Date: 2014-08-20 08:46+0100\n"
-"Last-Translator: Foreman Team <foreman-dev@googlegroups.com>\n"
-"Language-Team: Foreman Team <foreman-dev@googlegroups.com>\n"
+"POT-Creation-Date: 2026-02-16 18:46+0000\n"
+"PO-Revision-Date: 2026-02-16 18:46+0000\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
+#: ../app/services/foreman_opentofu/opentofu_executer.rb:53
+msgid "Unable to render provisioning template"
+msgstr ""
+
+#: ../app/services/foreman_opentofu/opentofu_executer.rb:62
+msgid "Unable to find template specified by %s setting"
+msgstr ""
+
+#: ../app/views/compute_resources/form/_tofu.html.erb:1
+msgid "Common fields"
+msgstr ""
+
+#: ../app/views/compute_resources/form/_tofu.html.erb:4
+msgid "127.0.0.1"
+msgstr ""
+
+#: ../app/views/compute_resources/form/_tofu.html.erb:5
+msgid "e.g. admin"
+msgstr ""
+
+#: ../app/views/compute_resources/show/_tofu.html.erb:2
+msgid "OpenTofu Provider"
+msgstr ""
+
+#: ../app/views/compute_resources/show/_tofu.html.erb:6
+msgid "OpenTofu Template"
+msgstr ""
+
+#: ../app/views/compute_resources/show/_tofu.html.erb:10
+msgid "URL"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/form/tofu/_base.html.erb:5
+msgid "VM Config"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/form/tofu/_base.html.erb:9
+msgid "Storage"
+msgstr ""
+
+#: ../lib/foreman_opentofu/engine.rb:26
+msgid "OpenTofu Script template"
+msgstr ""
+
+#: gemspec.rb:2
+msgid "TODO: Description of ForemanPluginTemplate."
+msgstr ""
