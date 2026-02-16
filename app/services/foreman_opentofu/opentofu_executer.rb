@@ -56,16 +56,7 @@ module ForemanOpentofu
     end
 
     def provision_template
-      name = ''
-      provider = @compute_resource.opentofu_provider
-      case provider
-      when 'nutanix'
-        name = Setting[:provision_nutanix_host_template]
-      when 'ovirt'
-        name = Setting[:provision_ovirt_host_template]
-      when 'vsphere'
-        name = Setting[:provision_vsphere_host_template]
-      end
+      name = @compute_resource.opentofu_template.name
       template = ProvisioningTemplate.unscoped.find_by(name: name)
       unless template
         raise ::Foreman::Exception.new(N_('Unable to find template specified by %s setting'),

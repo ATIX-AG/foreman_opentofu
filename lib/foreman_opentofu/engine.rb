@@ -22,34 +22,8 @@ module ForemanOpentofu
           # Add Global files for extending foreman-core components and routes
           # Register Nutanix compute resource in foreman
           compute_resource ForemanOpentofu::Tofu
-          settings do
-            category :opentofu, N_('Opentofu') do
-              templates = lambda {
-                Hash[ProvisioningTemplate.where(template_kind: TemplateKind.where(name: 'script')).map do |temp|
-                       [temp[:name], temp[:name]]
-                     end ]
-              }
 
-              setting 'provision_nutanix_host_template',
-                type: :string,
-                collection: templates,
-                default: 'Nutanix provision - host',
-                full_name: N_('Nutanix Host provision template'),
-                description: N_('Opentofu script template to use for Nutanix based host provisioning')
-              setting 'provision_ovirt_host_template',
-                type: :string,
-                collection: templates,
-                default: 'Ovirt provision - host',
-                full_name: N_('Ovirt Host provision template'),
-                description: N_('Opentofu script template to use for Ovirt based host provisioning')
-              setting 'provision_vsphere_host_template',
-                type: :string,
-                collection: templates,
-                default: 'Vsphere provision - host',
-                full_name: N_('Vsphere Host provision template'),
-                description: N_('Opentofu script template to use for Vsphere based host provisioning')
-            end
-          end
+          template_labels 'opentofu_script' => N_('OpenTofu Script template')
         end
       end
     end

@@ -3,6 +3,10 @@
   <td><%= @compute_resource.opentofu_provider %></td>
 </tr>
 <tr>
+  <td><%= _('OpenTofu Template') %></td>
+  <td><%= link_to @compute_resource.opentofu_template, edit_provisioning_template_path(@compute_resource.opentofu_template) %></td>
+</tr>
+<tr>
   <td><%= _('URL') %></td>
   <td><%= @compute_resource.url %></td>
 </tr>
