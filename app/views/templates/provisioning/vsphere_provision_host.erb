@@ -1,0 +1,78 @@
+<%#
+kind: opentofu_script
+name: Vsphere provision - host
+model: ProvisioningTemplate
+description: |
+  vsphere opentofu script to create vm resource
+-%>
+<% mode = @resource_name || 'provision' %>
+
+<%= terraform_block({ vsphere: { source: 'opentofu/vsphere', version: '2.9.2' } }) %>
+
+provider "vsphere" {
+  user                 = "<%= @compute_resource['user'] %>"
+  password             = "<%= @compute_resource['password'] %>"
+  vsphere_server       = "<%= @compute_resource['url'] %>"
+  allow_unverified_ssl = true
+  api_timeout          = 10
+}
+
+<% if mode == 'networks' %>
+
+data "vsphere_networks" "all" {
+  datacenter_id = data.vsphere_datacenter.datacenter.id
+}
+
+output "resources" {
+  value = [
+    for n in data.vsphere_networks.all.networks : {
+      id   = n.id
+      name = n.name
+    }
+  ]
+}
+
+<% elsif mode == 'provision' %>
+
+data "vsphere_datacenter" "datacenter" {
+  name = "datacenter"
+}
+
+data "vsphere_datastore" "datastore" {
+  name = "datastore_name"
+  datacenter_id = data.vsphere_datacenter.datacenter.id
+}
+
+data "vsphere_resource_pool" "pool" {
+  name          = "Resources"
+  datacenter_id = data.vsphere_datacenter.datacenter.id
+}
+
+data "vsphere_network" "network" {
+  name          = "network1"
+  datacenter_id = data.vsphere_datacenter.datacenter.id
+}
+
+resource "vsphere_virtual_machine" "vm" {
+  name             = "<%= host_name %>"
+  resource_pool_id = data.vsphere_resource_pool.pool.id
+  datastore_id     = data.vsphere_datastore.datastore.id
+  guest_id         = "otherLinux64Guest"
+  wait_for_guest_net_timeout = 0
+  wait_for_guest_ip_timeout  = 0
+
+  <%= build_disks %>
+  <%= build_nics %>
+  
+  <%= vm_attributes(['name', 'resource_pool_id', 'datastore_id', 'guest_id']) %>
+}
+
+output "vm_attrs" {
+  value = {
+      identity = vsphere_virtual_machine.vm.uuid
+      mac = vsphere_virtual_machine.vm.network_interface[0].mac_address
+      vm = vsphere_virtual_machine.vm
+  }
+}
+<% end %>
+
