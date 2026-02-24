@@ -3,7 +3,7 @@
   <%= select_f f, :opentofu_template_id, ProvisioningTemplate.of_kind('opentofu_script'), :id, :name %>
   <%= text_f f, :url, :help_block => _("127.0.0.1") %>
   <%= text_f f, :user , :help_block => _("e.g. admin") %>
-  <%= password_f f, :password  %>
+  <%= password_f f, :password, :unset => unset_password? %>
 <% end %>
 <div class="col-md-offset-2">
   <%= test_connection_button_f(f, (true)) %>
