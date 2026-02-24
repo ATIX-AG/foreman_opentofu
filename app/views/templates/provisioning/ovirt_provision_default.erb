@@ -5,6 +5,7 @@ model: ProvisioningTemplate
 description: |
   oVirt OpenTofu script to create vm resource
 -%>
+<% mode = @resource_name || 'provision' %>
 
 terraform {
   required_providers {
@@ -12,7 +13,7 @@ terraform {
       source = "ovirt/ovirt"
     }
   }
-  <% if @use_backend %>
+  <% if @use_backend && mode == 'provision' %>
     backend "http" {
       address        = "<%= Setting[:foreman_url] %>/api/v2/tf_states/<%= @host_name %>"
       headers = {
@@ -29,20 +30,10 @@ provider "ovirt" {
   tls_insecure = true
 }
 
+
 data "ovirt_blank_template" "blank" {
 }
 
-resource "ovirt_vm" "vm" {
-  name        = "<%= @host_name %>"
-  cluster_id  = "2ad616ea-4b66-11f0-964d-901b0ecbd584"
-  template_id = data.ovirt_blank_template.blank.id
-  cpu_cores   = <%= @cr_attrs['cpu_cores'] || 1 %>
-  cpu_sockets = <%= @cr_attrs['cpu_sockets'] || 1 %>
-  cpu_threads = <%= @cr_attrs['cpu_threads'] || 1 %>
-  memory      = <%= @cr_attrs['memory'] || 400000 %>
-  maximum_memory = <%= @cr_attrs['maximum_memory'] || 4000000 %>
-  memory_ballooning = <%= @cr_attrs['memory_ballooning'] || false %>
-}
 resource "ovirt_vm" "vm" {
   name        = "<%= @host_name %>"
   cluster_id  = "2ad616ea-4b66-11f0-964d-901b0ecbd584"

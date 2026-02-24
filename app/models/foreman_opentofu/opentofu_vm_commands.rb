@@ -3,7 +3,7 @@ module ForemanOpentofu
     def find_vm_by_uuid(uuid)
       vm_command_errors('find vm') do
         tf_state = ForemanOpentofu::TfState.find_by(uuid: uuid)
-        data = client({ 'name' => tf_state&.name }).run('output')
+        data = client({ 'name' => tf_state&.name }).run_output
         ComputeVM.new(self, data)
       end
     end
@@ -12,7 +12,7 @@ module ForemanOpentofu
       vm_command_errors('new vm') do
         args = default_attributes.merge(args)
         executor = client(args)
-        data = executor.run('new')
+        data = executor.run_new
         OpenStruct.new(data['resource_changes'].first['change']['after'])
       end
     end
@@ -21,14 +21,14 @@ module ForemanOpentofu
       vm_command_errors('create vm') do
         args = default_attributes.merge(args)
         executor = client(args)
-        output = executor.run('create')
+        output = executor.run_create
         ComputeVM.new(self, output)
       end
     end
 
     def destroy_vm(uuid)
       tf_state = ForemanOpentofu::TfState.find_by(uuid: uuid)
-      client({ 'name' => tf_state&.name }).run('destroy')
+      client({ 'name' => tf_state&.name }).run_destroy
       return unless tf_state
 
       Rails.logger.info "Deleting tfstate for #{tf_state&.name}"
@@ -36,12 +36,12 @@ module ForemanOpentofu
     end
 
     def start_vm(name)
-      output = client({ 'name' => name, 'power_state' => 'on' }).run('create')
+      output = client({ 'name' => name, 'power_state' => 'on' }).run_create
       output['vm']['power_state'] == 'on'
     end
 
     def stop_vm(name)
-      output = client({ 'name' => name, 'power_state' => 'off' }).run('create')
+      output = client({ 'name' => name, 'power_state' => 'off' }).run_create
       output['vm']['power_state'] == 'off'
     end
 
@@ -50,15 +50,19 @@ module ForemanOpentofu
       raise StandardError, "VM with UUID #{uuid} does not exist" unless tf_state
       vm_command_errors('update vm') do
         attrs = attrs.empty? ? {} : attrs.first
-        data = client({ 'name' => tf_state.name }.merge(attrs)).run('create')
+        data = client({ 'name' => tf_state.name }.merge(attrs)).run_create
         ComputeVM.new(self, data)
       end
+    end
+
+    def fetch_resource(resource_name = '')
+      client({ 'resource_name' => resource_name }).run_fetch
     end
 
     def test_connection(options = {})
       super
       begin
-        client.run('test_connection')
+        client.run_test_connection
       rescue StandardError => e
         Rails.logger.error("OpenTofu test connection failed: #{e.message}")
         errors.add(:base, e.message)
