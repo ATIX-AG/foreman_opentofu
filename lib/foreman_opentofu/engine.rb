@@ -24,6 +24,16 @@ module ForemanOpentofu
           compute_resource ForemanOpentofu::Tofu
 
           template_labels 'opentofu_script' => N_('OpenTofu Script template')
+
+          settings do
+            category :opentofu, N_('Opentofu') do
+              setting 'tfstate_token_timeout',
+                type: :integer,
+                default: 600,
+                full_name: N_('TfState Token Timeout'),
+                description: N_('Number of seconds a run of Opentofu command is allowed to report tf-state back to the plugin.')
+            end
+          end
         end
       end
     end
