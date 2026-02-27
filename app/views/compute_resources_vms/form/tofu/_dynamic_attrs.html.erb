@@ -3,15 +3,20 @@
 
   <% case attr["type"] %>
   <% when 'string' %>
-    <%= text_f f, attr["name"].to_sym, label: _(label), label_help: attr['help'] %>
+    <%= text_f f, attr["name"].to_sym, label: _(label), label_help: attr['help'], :required => attr['mandatory'] %>
   <% when 'bool' %>
-    <%= checkbox_f f, attr["name"].to_sym, label: _(label), label_help: attr['help'] %>
+    <%= checkbox_f f, attr["name"].to_sym, label: _(label), label_help: attr['help'], :required => attr['mandatory'] %>
   <% when 'number' %>
-    <%= counter_f f, attr["name"].to_sym, label: _(label), label_help: attr['help'] %>
+    <%= counter_f f, attr["name"].to_sym, label: _(label), label_help: attr['help'], :required => attr['mandatory'] %>
   <% when 'select' %>
     <% if attr.key? 'options' %>
-      <%= select_f f, attr["name"].to_sym, attr.fetch('options', []), :to_s, :to_s, { :include_blank => true }, label: _(label), label_help: attr['help'] %>
+      <% if attr['options'].is_a?(Hash) && attr['options'].key?('data_source') -%>
+        <%= selectable_f f, attr["name"].to_sym, compute_resource.available_resource_ui_select(attr.dig('options', 'data_source', 'name'), attr.dig('options')), { :include_blank => !attr['mandatory'] }, label: _(label), label_help: attr['help'], :required => attr['mandatory'] %>
+      <% else -%>
+        <%= select_f f, attr["name"].to_sym, attr.fetch('options', []), :to_s, :to_s, { :include_blank => !attr['mandatory'] }, label: _(label), label_help: attr['help'], :required => attr['mandatory'] %>
+        <%end -%>
     <% else  %>
+      <% #FIXME: what to do with this? %>
       <%= select_f f, attr["name"].to_sym, (options || []), :id, :name, { :include_blank => true }, label: _(label), label_help: attr['help'] %>
     <% end %>
   <% end %>

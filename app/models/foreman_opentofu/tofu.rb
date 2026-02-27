@@ -93,11 +93,15 @@ module ForemanOpentofu
       true
     end
 
-    def available_resource(resource_name)
+    def available_resource(resource_name, options = {})
       cache.cache("#{name}_#{resource_name}") do
-        resource = fetch_resource(resource_name)
+        resource = fetch_resource(resource_name, options)
         resource.map { |h| OpenStruct.new(h) }
       end
+    end
+
+    def available_resource_ui_select(resource_name, options = {})
+      available_resource(resource_name, options)&.map { |obj| [obj['name'], obj['id']] }
     end
   end
 end

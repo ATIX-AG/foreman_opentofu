@@ -5,7 +5,7 @@ module ForemanOpentofu
     def initialize(compute_resource, args = {})
       @compute_resource = compute_resource
       @cr_attrs = args.to_h
-      @resource_name = @cr_attrs['resource_name']
+      @resource = @cr_attrs['resource']
       @host_name = @cr_attrs['name'] || 'test'
     end
 
@@ -89,7 +89,7 @@ module ForemanOpentofu
       scope.instance_variable_set(:@use_backend, @use_backend)
       scope.instance_variable_set(:@token, @token) if @use_backend
       scope.instance_variable_set(:@host_name, @host_name)
-      scope.instance_variable_set(:@resource_name, @resource_name)
+      scope.instance_variable_set(:@resource, @resource)
       rendered_template = Foreman::Renderer::UnsafeModeRenderer.render(source, scope)
       raise ::Foreman::Exception, N_('Unable to render provisioning template') unless rendered_template
 

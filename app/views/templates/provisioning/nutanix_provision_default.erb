@@ -5,7 +5,6 @@ model: ProvisioningTemplate
 description: |
   Nutanix OpenTofu script to create vm resource
 -%>
-<% mode = @resource_name || 'provision' %>
 
 <%= terraform_block({ nutanix: { source: 'nutanix/nutanix' } }) %>
 
@@ -16,41 +15,19 @@ provider "nutanix" {
     insecure = true
 }
 
-<%# Fetch Nutanix clusters when fetch mode is "datacenters" %>
-<% if mode == 'datacenters' %>
+<% if @resource %>
+<%= resource_block(@resource) %>
 
-data "nutanix_clusters" "clusters" {}
-
-output "resources" {
-  value = [
-    for c in data.nutanix_clusters.clusters.entities : {
-      id   = c.metadata.uuid
-      name = c.spec.name
-    }
-  ]
-}
-
-<% elsif mode == 'networks' %>
-
-data "nutanix_subnets" "subnets" {}
-
-output "resources" {
-  value = [ for e in data.nutanix_subnets.subnets.entities : {
-    id = e.metadata.uuid
-    name = e.name
-  }]
-}
-
-<% elsif mode == 'provision' %>
+<% else %>
 
 data "nutanix_clusters" "clusters" {}
 
 resource "nutanix_virtual_machine" "vm" {
+  # only needed for 'new_vm' :-/
   cluster_uuid = data.nutanix_clusters.clusters.entities.0.metadata.uuid
   name         = "<%= @host_name %>"
 
   <%= vm_attributes(['name', 'cluster_uuid']) %>
-
 }
 
 output "vm_attrs" {
@@ -60,4 +37,3 @@ output "vm_attrs" {
   }
 }
 <% end %>
-

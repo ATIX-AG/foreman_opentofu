@@ -90,6 +90,52 @@ A short config file might look like this:
 
 The name of the file must be the same as the provider-type name we set in the next step (e.g. `/config/nutanix.json`).
 
+##### Dynamic Config Parameter
+
+Sometimes it is necessary to provide a list of possible values that are defined by the backend-service.
+Curating the 'options'-Array is tedious at best or not possible if multiple instances of the backend service are in use.
+This can be addressed by specifiying an OpenTofu-Provider's [DataSource](https://opentofu.org/docs/language/data-sources/) in the following way:
+
+```json
+{
+  "name": "volume_group", "type": "select", "group": "disk", "mandatory": true, "label": "Volume Group",
+  "options": {
+    "data_source": {
+      "name": "nutanix_volume_groups_v2",
+      "arguments": {
+        "filter": "name eq 'volume_group_test'",
+        "limit": 20
+      },
+      "entity": {
+        "id": "metadata.uuid"
+      }
+    },
+    "output_path_postfix": "volume_groups"
+  }
+}
+
+```
+The GUI requires a list of objects that at least contain a name and an id for each select-option.
+The `entity` section can be used to define a specific value from an object within the list that the DataSource returns.
+If the object already has `name` and `id` entries, these will automatically used.
+In the above example `name` exists in the object and can be used.
+For the `id` however, a different value must be selected from the object.
+
+This requests the data via OpenTofu in the following construct:
+
+```hcl
+data "nutanix_volume_groups_v2" "all" {
+  filter = "name eq 'volume_group_test'"
+  limit = 20
+}
+output "resources" {
+  value = [ for e in data.nutanix_volume_groups_v2.all.volume_groups: {
+    id = e.metadata.uuid
+    name = e.name
+  } ]
+}
+```
+
 #### Create Provider Type
 
 To let the Foreman OpenTofu Plugin know about your new Provider Type, one additional file has to be created in `/lib/foreman_opentofu/provider_types/`.
