@@ -1,4 +1,15 @@
 [
+  { "name": "cluster_uuid", "type": "select", "group": "vm", "mandatory": true,
+    "label": "Cluster", "options": {
+      "data_source": {
+        "name": "nutanix_clusters"
+      },
+      "output_path_postfix": "entities",
+      "entity": {
+        "id": "metadata.uuid"
+      }
+    }
+  },
   { "name": "num_sockets", "type": "number", "group": "vm", "mandatory": false,
     "label": "Sockets" },
   { "name": "num_vcpus_per_socket", "type": "number", "group": "vm", "mandatory": false,
@@ -23,5 +34,14 @@
   { "name": "model", "type": "select", "group": "nic", "mandatory": true,
     "options": [ "VIRTIO", "E1000" ] },
   { "name": "subnet_uuid", "type": "select", "group": "nic", "mandatory": true,
-    "label": "Subnet" }
+    "label": "Subnet", "options": {
+      "data_source": {
+        "name": "nutanix_subnets"
+      },
+      "output_path_postfix": "entities",
+      "entity": {
+        "id": "metadata.uuid"
+      }
+    }
+ }
 ]

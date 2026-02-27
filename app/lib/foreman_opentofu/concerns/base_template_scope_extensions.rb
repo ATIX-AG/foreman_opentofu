@@ -4,6 +4,7 @@ module ForemanOpentofu
       extend ActiveSupport::Concern
       extend ApipieDSL::Module
       include ForemanOpentofu::HclFormat
+      include ForemanOpentofu::NicHelpers
 
       apipie :class, 'Base macros related to Opentofu templates' do
         name 'OpenTofu helpers'
@@ -21,6 +22,37 @@ module ForemanOpentofu
         block << block_to_hcl(['required_providers'], data, depth: 1)
         block << backend_block
         block << "\n}"
+      end
+
+      apipie :method, 'Add "resource" data_source block' do
+        returns String, desc: ''
+      end
+      def resource_block(resource)
+        block = ''
+        path = ['data', resource[:name], 'all']
+
+        # data "<%= @resource[:name] %>" "all" {
+        # <% @resource.dig(:options, 'data_source', 'arguments')&.each do |key, value| %>
+        #   <%= key %> = <%= value.inspect %>
+        # <% end %>
+        # }
+        block << block_to_hcl(path, resource.dig(:options, 'data_source', 'arguments') || {})
+
+        # output "resources" {
+        #   value = [ for e in data.<%= @resource[:name] %>.all.<%= @resource.dig(:options, 'output_path_postfix') %>: {
+        #     id = e.<%= @resource.dig(:options, 'entity', 'id') || 'id' %>
+        #     name = e.<%= @resource.dig(:options, 'entity', 'name') || 'name' %>
+        #     # obj = e
+        #     } ]
+        # }
+        block << block_to_hcl(%w[output resources])
+        block << '{' << "\n"
+        block << "  value = [ for e in data.#{resource[:name]}.all.#{resource.dig(:options, 'output_path_postfix')}: {\n"
+        block << "    id = e.#{resource.dig(:options, 'entity', 'id') || 'id'}\n"
+        block << "    name = e.#{resource.dig(:options, 'entity', 'name') || 'name'}\n"
+        # block << 'obj = e'
+        block << '  } ]' << "\n"
+        block << '}' << "\n"
       end
 
       apipie :method, 'Returns all VM parameters' do
@@ -46,46 +78,6 @@ module ForemanOpentofu
         end
         res << to_hcl(data, snippet: true)
         res << nic_attributes(available_attributes)
-      end
-
-      def nic_attributes(available_attributes)
-        interfaces = @cr_attrs['interfaces'] || @cr_attrs['interfaces_attributes']
-        return '' if interfaces.blank?
-
-        interfaces = normalize_interfaces(interfaces)
-        nic_defs = available_attributes.values.select do |attrs|
-          attrs['group'] == 'nic'
-        end
-        res = ''
-        interfaces.each do |iface|
-          next if iface['subnet_uuid'].blank?
-
-          res << build_attribute_block('nic_list', iface, nic_defs)
-        end
-        res
-      end
-
-      def normalize_interfaces(interfaces)
-        if interfaces.is_a?(Hash)
-          if interfaces.keys.all? { |k| k.to_s =~ /^\d+$/ }
-            interfaces.values
-          else
-            [interfaces]
-          end
-        else
-          Array(interfaces)
-        end
-      end
-
-      def build_attribute_block(block_name, attrs, nic_defs)
-        block_data = {}
-        attrs.each do |k, v|
-          next if v.blank?
-          conf = nic_defs.find { |a| (a['name'] || a[:name]) == k }
-          next unless conf
-          block_data[k] = format_value(v, conf['type']) if conf
-        end
-        block_to_hcl([block_name], block_data)
       end
 
       def format_value(val, type)

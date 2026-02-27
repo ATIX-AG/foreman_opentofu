@@ -55,8 +55,8 @@ module ForemanOpentofu
       end
     end
 
-    def fetch_resource(resource_name = '')
-      client({ 'resource_name' => resource_name }).run_fetch
+    def fetch_resource(resource_name = '', options = {})
+      client({ 'resource' => { name: resource_name, options: options } }).run_fetch
     end
 
     def test_connection(options = {})

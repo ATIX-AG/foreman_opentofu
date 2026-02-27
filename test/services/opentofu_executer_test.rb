@@ -56,5 +56,13 @@ module ForemanOpentofu
       Foreman::Renderer::UnsafeModeRenderer.stubs(:render).returns(nil)
       assert_raises(Foreman::Exception) { @executor.send(:render_template) }
     end
+
+    test 'render_template with resource' do
+      executor = OpentofuExecuter.new(@compute_resource, { 'resource' => { name: 'datasource_name1', options: {} } })
+      executor.stubs(:provision_template).returns(@template)
+
+      @app_mock.expects(:output).with('resources')
+      executor.run_fetch
+    end
   end
 end

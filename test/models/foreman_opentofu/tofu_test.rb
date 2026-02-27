@@ -43,4 +43,9 @@ class TofuTest < ActiveSupport::TestCase
   test 'delegates available_attributes to opentofu-provider' do
     assert_equal subject.tofu_provider.available_attributes, subject.available_attributes
   end
+
+  test 'available_resource_ui_select() creates array for selectable_f()' do
+    subject.expects(:available_resource).with('config_param1', {}).returns([{ 'name' => 'abc', 'id' => 123, 'foo' => 'bar' }])
+    assert_equal [['abc', 123]], subject.available_resource_ui_select('config_param1')
+  end
 end
