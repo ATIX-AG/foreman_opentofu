@@ -10,3 +10,7 @@
   <td><%= _('URL') %></td>
   <td><%= @compute_resource.url %></td>
 </tr>
+<tr>
+  <td><%= _("Caching") %></td>
+  <td><%= @compute_resource.caching_enabled ? _("Enabled") : _("Disabled") %></td>
+</tr>

@@ -5,6 +5,7 @@ model: ProvisioningTemplate
 description: |
   Nutanix OpenTofu script to create vm resource
 -%>
+<% mode = @resource_name || 'provision' %>
 
 terraform {
   required_providers {
@@ -12,7 +13,7 @@ terraform {
       source = "nutanix/nutanix"
     }
   }
-  <% if @use_backend %>
+  <% if @use_backend && mode == 'provision' %>
     backend "http" {
       address        = "<%= Setting[:foreman_url] %>/api/v2/tf_states/<%= @host_name %>"
       headers = {
@@ -28,6 +29,22 @@ provider "nutanix" {
     endpoint = "<%= @compute_resource['url'] %>"
     insecure = true
 }
+
+<%# Fetch Nutanix clusters when fetch mode is "datacenters" %>
+<% if mode == 'datacenters' %>
+
+data "nutanix_clusters" "clusters" {}
+
+output "resources" {
+  value = [
+    for c in data.nutanix_clusters.clusters.entities : {
+      id   = c.metadata.uuid
+      name = c.spec.name
+    }
+  ]
+}
+
+<% elsif mode == 'provision' %>
 
 data "nutanix_clusters" "clusters" {}
 
@@ -45,4 +62,5 @@ output "vm_attrs" {
       mac = nutanix_virtual_machine.vm.nic_list[0].mac_address
   }
 }
+<% end %>
 

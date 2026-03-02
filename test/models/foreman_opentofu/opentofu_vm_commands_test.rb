@@ -10,13 +10,13 @@ module ForemanOpentofu
 
     test '#find_vm_by_uuid returns ComputeVM' do
       FactoryBot.create(:tf_state)
-      @executor.stubs(:run).with('output').returns({ 'id' => 'vm-1' })
+      @executor.stubs(:run_output).returns({ 'id' => 'vm-1' })
       vm = @nutanix_cr.find_vm_by_uuid('uuid-1')
       assert_instance_of ComputeVM, vm
     end
 
     test '#find_vm_by_uuid wraps exceptions' do
-      @executor.stubs(:run).raises(StandardError.new('boom'))
+      @executor.stubs(:run_output).raises(StandardError.new('boom'))
 
       assert_raises(Foreman::WrappedException) do
         @nutanix_cr.find_vm_by_uuid('uuid-1')
@@ -24,7 +24,7 @@ module ForemanOpentofu
     end
 
     test '#new_vm returns OpenStruct with attributes' do
-      @executor.stubs(:run).with('new').returns(
+      @executor.stubs(:run_new).returns(
         'resource_changes' => [
           { 'change' => { 'after' => { 'name' => 'vm1' } } },
         ]
@@ -37,7 +37,7 @@ module ForemanOpentofu
     end
 
     test '#create_vm returns ComputeVM' do
-      @executor.stubs(:run).with('create').returns({ 'id' => 'vm1' })
+      @executor.stubs(:run_create).returns({ 'id' => 'vm1' })
 
       vm = @nutanix_cr.create_vm('name' => 'vm1')
 
@@ -45,7 +45,7 @@ module ForemanOpentofu
     end
 
     test '#create_vm wraps exceptions' do
-      @executor.stubs(:run).raises(StandardError.new('boom'))
+      @executor.stubs(:run_create).raises(StandardError.new('boom'))
 
       assert_raises(Foreman::WrappedException) do
         @nutanix_cr.create_vm('name' => 'vm1')
@@ -55,14 +55,14 @@ module ForemanOpentofu
     test '#destroy_vm deletes tf_state' do
       tf_state = FactoryBot.create(:tf_state)
 
-      @executor.stubs(:run).with('destroy')
+      @executor.stubs(:run_destroy)
       assert_difference('ForemanOpentofu::TfState.count', -1) do
         @nutanix_cr.destroy_vm(tf_state.uuid)
       end
     end
 
     test '#destroy_vm does nothing when tf_state missing' do
-      @executor.stubs(:run).with('destroy')
+      @executor.stubs(:run_destroy)
 
       assert_nothing_raised do
         @nutanix_cr.destroy_vm('missing')
@@ -70,7 +70,7 @@ module ForemanOpentofu
     end
 
     test '#start_vm returns true when powered on' do
-      @executor.stubs(:run).with('create').returns(
+      @executor.stubs(:run_create).returns(
         'vm' => { 'power_state' => 'on' }
       )
 
@@ -78,7 +78,7 @@ module ForemanOpentofu
     end
 
     test '#stop_vm returns true when powered off' do
-      @executor.stubs(:run).with('create').returns(
+      @executor.stubs(:run_create).returns(
         'vm' => { 'power_state' => 'off' }
       )
 
@@ -88,7 +88,7 @@ module ForemanOpentofu
     test '#save_vm updates existing vm and returns ComputeVM without creating new TfState' do
       tf_state = FactoryBot.create(:tf_state, uuid: 'uuid1', name: 'existing-vm')
 
-      @executor.stubs(:run).with('create').returns({ 'id' => tf_state.uuid })
+      @executor.stubs(:run_create).returns({ 'id' => tf_state.uuid })
 
       assert_no_difference('ForemanOpentofu::TfState.count') do
         vm = @nutanix_cr.save_vm('uuid1', [{ 'cpu' => 4 }])
@@ -99,7 +99,7 @@ module ForemanOpentofu
     test '#save_vm updates vm with no attributes without creating new TfState' do
       tf_state = FactoryBot.create(:tf_state, uuid: 'uuid1', name: 'existing-vm')
 
-      @executor.stubs(:run).with('create').returns({ 'id' => tf_state.uuid })
+      @executor.stubs(:run_create).returns({ 'id' => tf_state.uuid })
 
       assert_no_difference('ForemanOpentofu::TfState.count') do
         vm = @nutanix_cr.save_vm('uuid1', [])
@@ -110,7 +110,7 @@ module ForemanOpentofu
     test '#save_vm wraps exceptions and does not create new TfState' do
       FactoryBot.create(:tf_state, uuid: 'uuid1', name: 'existing-vm')
 
-      @executor.stubs(:run).raises(StandardError.new('update failed'))
+      @executor.stubs(:run_create).raises(StandardError.new('update failed'))
 
       assert_no_difference('ForemanOpentofu::TfState.count') do
         assert_raises(Foreman::WrappedException) do
@@ -129,7 +129,7 @@ module ForemanOpentofu
     end
 
     test '#test_connection runs tofu test_connection' do
-      @executor.stubs(:run).with('test_connection')
+      @executor.stubs(:run_test_connection)
 
       @nutanix_cr.test_connection
 
@@ -137,7 +137,7 @@ module ForemanOpentofu
     end
 
     test '#test_connection adds error on failure' do
-      @executor.stubs(:run).raises(StandardError.new('fail'))
+      @executor.stubs(:run_test_connection).raises(StandardError.new('fail'))
 
       @nutanix_cr.test_connection
 

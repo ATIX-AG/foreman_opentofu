@@ -18,6 +18,7 @@
 module ForemanOpentofu
   class Tofu < ComputeResource
     include OpentofuVMCommands
+    include ComputeResourceCaching
     validates :provider, presence: true, inclusion: { in: %w[Tofu] }
     validates :url, presence: true
     validates :user, presence: true
@@ -84,8 +85,19 @@ module ForemanOpentofu
       { compute_attributes: {} }
     end
 
+    def new_volume
+      { compute_attributes: {} }
+    end
+
     def editable_network_interfaces?
       true
+    end
+
+    def available_resource(resource_name)
+      cache.cache("#{name}_#{resource_name}") do
+        resource = fetch_resource(resource_name)
+        resource.map { |h| OpenStruct.new(h) }
+      end
     end
   end
 end

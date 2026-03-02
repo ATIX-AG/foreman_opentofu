@@ -2,20 +2,21 @@ require 'json'
 
 module ForemanOpentofu
   class OpentofuExecuter
-    def initialize(*args)
-      @compute_resource = args[0]
-      @cr_attrs = args[1] || {}
+    def initialize(compute_resource, args = {})
+      @compute_resource = compute_resource
+      @cr_attrs = args.to_h
+      @resource_name = @cr_attrs['resource_name']
       @host_name = @cr_attrs['name'] || 'test'
     end
 
-    def run(mode = 'create')
+    def run(mode = '')
       Dir.mktmpdir('opentofu_') do |dir|
         tofu = AppWrapper.new(dir)
         @use_backend = %w[create destroy output].include?(mode)
         @token = create_token(@host_name) if @use_backend
         tofu.main_configuration = render_template
         tofu.init
-        run_mode(tofu, mode)
+        yield(tofu)
       end
     end
 
@@ -40,25 +41,40 @@ module ForemanOpentofu
       new_token
     end
 
-    def run_mode(tofu, mode = 'new')
-      case mode
-      when 'new'
+    def run_new
+      run('new') do |tofu|
         tofu.plan
         tofu.show_plan
-      when 'test_connection'
-        tofu.plan
-      when 'create'
-        tofu.plan
+      end
+    end
+
+    def run_test_connection
+      run('test', &:plan)
+    end
+
+    def run_create
+      run('create') do |tofu|
         tofu.apply
         attrs = tofu.output('vm_attrs')
         ForemanOpentofu::TfState.find_by(name: @cr_attrs['name'])&.update(uuid: attrs['identity'])
         attrs
-      when 'output'
+      end
+    end
+
+    def run_output
+      run('output') do |tofu|
         tofu.output('vm_attrs')
-      when 'destroy'
-        tofu.destroy
-      else
-        raise "Please select one of the modes: 'new', 'test_connection', 'create' or 'destroy'"
+      end
+    end
+
+    def run_destroy
+      run('destroy', &:destroy)
+    end
+
+    def run_fetch
+      run do |tofu|
+        tofu.apply
+        tofu.output('resources')
       end
     end
 
@@ -73,6 +89,7 @@ module ForemanOpentofu
       scope.instance_variable_set(:@use_backend, @use_backend)
       scope.instance_variable_set(:@token, @token) if @use_backend
       scope.instance_variable_set(:@host_name, @host_name)
+      scope.instance_variable_set(:@resource_name, @resource_name)
       rendered_template = Foreman::Renderer::UnsafeModeRenderer.render(source, scope)
       raise ::Foreman::Exception, N_('Unable to render provisioning template') unless rendered_template
 
