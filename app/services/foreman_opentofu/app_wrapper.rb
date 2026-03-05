@@ -1,6 +1,7 @@
 module ForemanOpentofu
   class AppWrapper
-    attr_reader :workdir, :planfile, :conffile
+    include HclFormat
+    attr_reader :workdir
 
     # TODO: for future versions
     #   - manage temp-work-dir; problem: no auto-remove after finished :-(
@@ -9,14 +10,33 @@ module ForemanOpentofu
     #   - use JSON-output for easier parsing
     #   - do we need locking or has the object be atomic
 
-    def initialize(workdir)
+    def initialize(workdir, opts = {})
       @workdir = workdir
-      @planfile = File.join(workdir, 'plan.bin')
-      @conffile = File.join(workdir, 'main.tf')
+      @variables = opts[:variables]
     end
 
-    def base_command
-      'tofu'
+    # rubocop:disable Style/SingleLineMethods
+    def planfile()   File.join(workdir, 'plan.bin')     end
+    def conffile()   File.join(workdir, 'main.tf')      end
+    def vardeffile() File.join(workdir, 'variables.tf') end
+
+    def base_command() 'tofu' end
+    # rubocop:enable Style/SingleLineMethods
+
+    # write variables definition file based on @variables into 'variables.tf'
+    def create_variables_file
+      File.open(vardeffile, 'w') do |f|
+        @variables.each_key do |var|
+          data = { 'type' => :string }
+          data['sensitive'] = var.to_s == 'password'
+
+          f << block_to_hcl(['variable', var], data)
+        end
+      end
+    end
+
+    def variable_params
+      @variables.map { |var, val| ['-var', "#{var}=#{val}"] }.flatten
     end
 
     def default_params
@@ -32,6 +52,8 @@ module ForemanOpentofu
     #   end
     # end
     def init(params = [], &block)
+      create_variables_file if @variables
+
       tofu_execute('init', ['-input=false'].concat(parse_params(params)), &block)
     end
 
@@ -78,13 +100,17 @@ module ForemanOpentofu
       cmd.map { |item| "'#{item}'" }.append('2>&1').join(' ')
     end
 
+    def envvars
+      @variables.transform_keys { |variable| "TF_VAR_#{variable}" }
+    end
+
     def execute(cmd)
       output = nil
       # quote cmdline parameters and add stderr to stdout
       commandline = command(cmd)
       Dir.chdir(workdir) do
         Rails.logger.debug "Start command: #{commandline.inspect}"
-        IO.popen(commandline, 'r+') do |pipe|
+        IO.popen(envvars, commandline, 'r+') do |pipe|
           if block_given?
             yield pipe
           else

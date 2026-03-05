@@ -5,6 +5,7 @@ module ForemanOpentofu
     test 'block_to_hcl' do
       assert_equal "\nhello ", subject.block_to_hcl(['hello'])
       assert_equal "\nthis \"is\" \"a\" \"test\" ", subject.block_to_hcl(%w[this is a test])
+      assert_equal "\nthis \"is\" \"1\" \"test\" ", subject.block_to_hcl(['this', :is, 1, 'test'])
       assert_equal "\nthis \"is\" \"a\" \"test\" 123", subject.block_to_hcl(%w[this is a test], 123)
       assert_equal "\n  this \"is\" \"a\" \"test\" ", subject.block_to_hcl(%w[this is a test], nil, depth: 1)
       assert_equal "\n  this \"is\" \"a\" \"test\" {}", subject.block_to_hcl(%w[this is a test], {}, depth: 1)
@@ -55,6 +56,7 @@ module ForemanOpentofu
       assert_equal '"help"', subject.to_hcl('help')
       assert_equal '42', subject.to_hcl(42)
       assert_equal '', subject.to_hcl(nil)
+      assert_equal 'hello', subject.to_hcl(:hello)
       assert_snapshot self, 'to_hcl', subject.to_hcl({
         :hash => {
           bool: true,

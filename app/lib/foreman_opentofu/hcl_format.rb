@@ -37,7 +37,7 @@ module ForemanOpentofu
       hcl << names[0]
       hcl << ' '
       # sub-block-names are quoted
-      hcl << names[1..].map(&:inspect).join(' ')
+      hcl << names[1..].map(&:to_s).map(&:inspect).join(' ')
       hcl << ' ' if hcl[-1] != ' '
       hcl << to_hcl(content, opts)
     end

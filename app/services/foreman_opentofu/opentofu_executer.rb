@@ -11,7 +11,11 @@ module ForemanOpentofu
 
     def run(mode = '')
       Dir.mktmpdir('opentofu_') do |dir|
-        tofu = AppWrapper.new(dir)
+        tofu = AppWrapper.new(dir, variables: {
+          username: @compute_resource['user'],
+          password: @compute_resource['password'],
+          endpoint: @compute_resource['url'],
+        })
         @use_backend = %w[create destroy output].include?(mode)
         @token = create_token(@host_name) if @use_backend
         tofu.main_configuration = render_template
@@ -82,14 +86,16 @@ module ForemanOpentofu
 
     def render_template
       template = provision_template
-      scope = Foreman::Renderer.get_scope(source: template)
+      variables = {
+        compute_resource: @compute_resource,
+        cr_attrs: @cr_attrs,
+        use_backend: @use_backend,
+        token: @token,
+        host_name: @host_name,
+        resource: @resource,
+      }
+      scope = Foreman::Renderer.get_scope(source: template, variables: variables)
       source = Foreman::Renderer.get_source(template: template)
-      scope.instance_variable_set(:@compute_resource, @compute_resource)
-      scope.instance_variable_set(:@cr_attrs, @cr_attrs) if @cr_attrs
-      scope.instance_variable_set(:@use_backend, @use_backend)
-      scope.instance_variable_set(:@token, @token) if @use_backend
-      scope.instance_variable_set(:@host_name, @host_name)
-      scope.instance_variable_set(:@resource, @resource)
       rendered_template = Foreman::Renderer::UnsafeModeRenderer.render(source, scope)
       raise ::Foreman::Exception, N_('Unable to render provisioning template') unless rendered_template
 

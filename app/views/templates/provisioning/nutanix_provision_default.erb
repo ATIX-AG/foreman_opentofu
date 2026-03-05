@@ -9,10 +9,10 @@ description: |
 <%= terraform_block({ nutanix: { source: 'nutanix/nutanix' } }) %>
 
 provider "nutanix" {
-    username = "<%= @compute_resource['user'] %>"
-    password = "<%= @compute_resource['password'] %>"
-    endpoint = "<%= @compute_resource['url'] %>"
-    insecure = true
+  username = var.username
+  password = var.password
+  endpoint = var.endpoint
+  insecure = true
 }
 
 <% if @resource %>
