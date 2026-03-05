@@ -1,0 +1,14 @@
+terraform {
+  required_providers {
+    myprovider = {
+      source = "me/myprovider"
+      version = "1.0.1"
+    }
+  }
+  backend "http" {
+    address = "http://foreman.example.com/api/v2/tf_states/host.example.com"
+    headers = {
+      Authorization = "Token secret123"
+    }
+  }
+}

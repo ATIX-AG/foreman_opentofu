@@ -7,21 +7,7 @@ description: |
 -%>
 <% mode = @resource_name || 'provision' %>
 
-terraform {
-  required_providers {
-    ovirt = {
-      source = "ovirt/ovirt"
-    }
-  }
-  <% if @use_backend && mode == 'provision' %>
-    backend "http" {
-      address        = "<%= Setting[:foreman_url] %>/api/v2/tf_states/<%= @host_name %>"
-      headers = {
-        Authorization = "Token <%= @token %>"
-      }
-    }
-  <% end %>
-}
+<%= terraform_block({ ovirt: { source: 'ovirt/ovirt' } }) %>
 
 provider "ovirt" {
   username = "<%= @compute_resource['user'] %>"
