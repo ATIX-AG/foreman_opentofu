@@ -1,0 +1,19 @@
+{
+  hash = {
+    bool = true
+    string = "Hello \"World\"!"
+    number = 123456
+    list = [
+      1,
+      2,
+      3,
+      4,
+      5
+    ]
+  }
+  list = [
+    "abc",
+    "xyz"
+  ]
+  String = "works"
+}
