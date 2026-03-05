@@ -10,9 +10,9 @@ description: |
 <%= terraform_block({ ovirt: { source: 'ovirt/ovirt' } }) %>
 
 provider "ovirt" {
-  username = "<%= @compute_resource['user'] %>"
-  password = "<%= @compute_resource['password'] %>"
-  url = "<%= @compute_resource['url'] %>"
+  username = var.username
+  password = var.password
+  url = var.endpoint
   tls_insecure = true
 }
 
