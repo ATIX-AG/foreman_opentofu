@@ -23,11 +23,13 @@ provider "nutanix" {
 data "nutanix_clusters" "clusters" {}
 
 resource "nutanix_virtual_machine" "vm" {
+  <%- unless @cr_attrs['cluster_uuid'] %>
   # only needed for 'new_vm' :-/
   cluster_uuid = data.nutanix_clusters.clusters.entities.0.metadata.uuid
+  <%- end %>
   name         = "<%= @host_name %>"
 
-  <%= vm_attributes(['name', 'cluster_uuid']) %>
+  <%= vm_attributes(['name']) %>
 }
 
 output "vm_attrs" {
