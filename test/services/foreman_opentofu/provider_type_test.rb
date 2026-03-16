@@ -1,7 +1,7 @@
 module ForemanOpentofu
   class ProviderTypeTest < ActiveSupport::TestCase
     # FIXME: use a non-existing ProviderType and stub the CR_ATTRS instead
-    let(:provider_type) { ProviderType.new('nutanix') }
+    let(:provider_type) { ProviderTypeManager.find('nutanix') }
 
     test 'has name' do
       assert_not_empty provider_type.name
@@ -32,9 +32,39 @@ module ForemanOpentofu
     test 'has available_attributes' do
       attr_hash = provider_type.available_attributes
 
-      assert_instance_of Hash, attr_hash
+      assert_instance_of ActiveSupport::HashWithIndifferentAccess, attr_hash
       assert_include attr_hash.keys, 'num_sockets'
       assert_equal 'num_sockets', attr_hash['num_sockets']['name']
+    end
+
+    test 'available attributes outputs hash with indifferent access' do
+      attrs = provider_type.available_attributes
+
+      assert_instance_of ActiveSupport::HashWithIndifferentAccess, attrs
+      assert_include attrs.keys, 'num_sockets'
+      assert_equal 'num_sockets', attrs['num_sockets']['name']
+      assert_equal 'num_sockets', attrs[:num_sockets][:name]
+      assert_equal 'num_sockets', attrs[:num_sockets]['name']
+    end
+
+    test 'cr_attrs converts input to HashWithIndifferentAccess' do
+      provider_type1 = ForemanOpentofu::ProviderType.new(provider_type.id)
+      provider_type1.cr_attrs = [
+        { name: 'num_sockets', group: 'vm', "options": {
+          "data_source": {
+            "name": 'nutanix_sockets',
+          },
+        } },
+      ]
+
+      attrs = provider_type1.attributes
+
+      assert_instance_of Array, attrs
+      assert_instance_of ActiveSupport::HashWithIndifferentAccess, attrs.first
+
+      assert_equal 'num_sockets', attrs.first[:name]
+      assert_equal 'num_sockets', attrs.first['name']
+      assert_equal 'nutanix_sockets', attrs.first['options'][:data_source][:name]
     end
 
     test 'no available_attributes raises' do
@@ -46,23 +76,22 @@ module ForemanOpentofu
     end
 
     test 'no default_attributes returns nil' do
+      provider_type.instance_variable_set(:@default_attributes, nil)
       assert_nil provider_type.default_attributes
     end
 
     test 'returns default_attributes, if any' do
+      provider_type1 = ForemanOpentofu::ProviderType.new(provider_type.id)
       def_attr = {
-        'server_type' => 'cx23',
-        'image' => 'debian-13',
+        server_type: 'cx23',
+        image: 'debian-13',
       }
 
-      provider_type.instance_eval do
-        @default_attributes = def_attr
-      end
-
-      assert_not_nil provider_type.default_attributes
-      assert_instance_of Hash, provider_type.default_attributes
-      assert_not_empty provider_type.default_attributes
-      assert_equal def_attr, provider_type.default_attributes
+      provider_type1.instance_variable_set(:@default_attributes, def_attr)
+      assert_not_nil provider_type1.default_attributes
+      assert_instance_of Hash, provider_type1.default_attributes
+      assert_not_empty provider_type1.default_attributes
+      assert_equal def_attr, provider_type1.default_attributes
     end
   end
 end

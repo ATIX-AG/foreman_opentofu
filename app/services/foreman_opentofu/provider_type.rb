@@ -1,30 +1,38 @@
 module ForemanOpentofu
   class ProviderType
     attr_reader :id, :name, :default_attributes
+    attr_accessor :capabilities
 
     def initialize(id)
       @id = id.to_sym
       @name = id.capitalize
+      @capabilities = []
+      @cr_attrs = []
+    end
+
+    def cr_attrs=(input)
+      @cr_attrs = Array(input).map do |attr|
+        ActiveSupport::HashWithIndifferentAccess.new(attr)
+      end
     end
 
     # returns hash of available-attributes with attr-name as key
     def available_attributes
       raise "No available-attributes found for #{name}" unless attributes?
 
-      attributes&.index_by { |e| e['name'] }
+      attributes.index_by { |e| e['name'] }.with_indifferent_access
     end
 
     def attributes?
-      CR_ATTRS.key? id.to_s
+      @cr_attrs.present?
     end
 
     def attributes(group = nil)
-      return nil unless CR_ATTRS.key? id.to_s
+      return nil if @cr_attrs.blank?
 
-      a = CR_ATTRS[id.to_s]
-      return a if group.nil?
+      return @cr_attrs if group.nil?
 
-      a.select { |e| e['group'] == group }
+      @cr_attrs.select { |e| e['group'] == group }
     end
   end
 end
