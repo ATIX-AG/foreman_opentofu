@@ -3,7 +3,7 @@ require "#{ForemanOpentofu::Engine.root}/app/services/foreman_opentofu/provider_
 require "#{ForemanOpentofu::Engine.root}/app/services/foreman_opentofu/provider_type"
 
 ForemanOpentofu::ProviderTypeManager.register('nutanix') do
-  self.cr_attrs = [
+  self.provider_attrs = [
     { "name": 'cluster_uuid', "type": 'select', "group": 'vm', "mandatory": true,
       "label": 'Cluster', "options": {
         "data_source": {

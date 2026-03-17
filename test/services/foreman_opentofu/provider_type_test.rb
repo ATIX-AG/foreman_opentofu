@@ -47,9 +47,9 @@ module ForemanOpentofu
       assert_equal 'num_sockets', attrs[:num_sockets]['name']
     end
 
-    test 'cr_attrs converts input to HashWithIndifferentAccess' do
+    test 'provider_attrs converts input to HashWithIndifferentAccess' do
       provider_type1 = ForemanOpentofu::ProviderType.new(provider_type.id)
-      provider_type1.cr_attrs = [
+      provider_type1.provider_attrs = [
         { name: 'num_sockets', group: 'vm', "options": {
           "data_source": {
             "name": 'nutanix_sockets',

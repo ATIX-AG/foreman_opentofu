@@ -1,5 +1,5 @@
 ForemanOpentofu::ProviderTypeManager.register('ovirt') do
-  self.cr_attrs = [
+  self.provider_attrs = [
     { "name": 'clone', "type": 'bool', "group": 'vm' },
     { "name": 'cluster_id', "type": 'string', "group": 'vm' },
     { "name": 'cpu_cores', "type": 'number', "group": 'vm' },

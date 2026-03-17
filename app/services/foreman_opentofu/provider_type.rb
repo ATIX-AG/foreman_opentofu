@@ -7,11 +7,11 @@ module ForemanOpentofu
       @id = id.to_sym
       @name = id.capitalize
       @capabilities = []
-      @cr_attrs = []
+      @provider_attrs = []
     end
 
-    def cr_attrs=(input)
-      @cr_attrs = Array(input).map do |attr|
+    def provider_attrs=(input)
+      @provider_attrs = Array(input).map do |attr|
         ActiveSupport::HashWithIndifferentAccess.new(attr)
       end
     end
@@ -24,15 +24,15 @@ module ForemanOpentofu
     end
 
     def attributes?
-      @cr_attrs.present?
+      @provider_attrs.present?
     end
 
     def attributes(group = nil)
-      return nil if @cr_attrs.blank?
+      return nil if @provider_attrs.blank?
 
-      return @cr_attrs if group.nil?
+      return @provider_attrs if group.nil?
 
-      @cr_attrs.select { |e| e['group'] == group }
+      @provider_attrs.select { |e| e['group'] == group }
     end
   end
 end
