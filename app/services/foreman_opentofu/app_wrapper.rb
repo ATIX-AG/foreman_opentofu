@@ -108,14 +108,11 @@ module ForemanOpentofu
       output = nil
       # quote cmdline parameters and add stderr to stdout
       commandline = command(cmd)
-      Dir.chdir(workdir) do
-        Rails.logger.debug "Start command: #{commandline.inspect}"
-        IO.popen(envvars, commandline, 'r+') do |pipe|
-          if block_given?
-            yield pipe
-          else
-            output = pipe.read
-          end
+      IO.popen(envvars, commandline, 'r+', chdir: workdir) do |pipe|
+        if block_given?
+          yield pipe
+        else
+          output = pipe.read
         end
       end
       ret = $CHILD_STATUS
