@@ -1,23 +1,28 @@
 <% attrs.each do |attr|
-  label = attr.fetch('label', attr['name'].humanize) %>
+  label = attr.fetch('label', attr['name'].humanize)
+  common_options = {
+    label: _(label),
+    label_help: attr['help'],
+    required: attr['mandatory'],
+  } %>
 
-  <% case attr["type"] %>
+  <% case attr['type'] %>
   <% when 'string' %>
-    <%= text_f f, attr["name"].to_sym, label: _(label), label_help: attr['help'], :required => attr['mandatory'] %>
+    <%= text_f f, attr['name'].to_sym, common_options %>
   <% when 'bool' %>
-    <%= checkbox_f f, attr["name"].to_sym, label: _(label), label_help: attr['help'], :required => attr['mandatory'] %>
+    <%= checkbox_f f, attr['name'].to_sym, common_options %>
   <% when 'number' %>
-    <%= counter_f f, attr["name"].to_sym, label: _(label), label_help: attr['help'], :required => attr['mandatory'] %>
+    <%= counter_f f, attr['name'].to_sym, common_options %>
   <% when 'select' %>
     <% if attr.key? 'options' %>
       <% if attr['options'].is_a?(Hash) && attr['options'].key?('data_source') -%>
-        <%= selectable_f f, attr["name"].to_sym, compute_resource.available_resource_ui_select(attr.dig('options', 'data_source', 'name'), attr.dig('options')), { :include_blank => !attr['mandatory'] }, label: _(label), label_help: attr['help'], :required => attr['mandatory'] %>
+        <%= selectable_f f, attr['name'].to_sym, compute_resource.available_resource_ui_select(attr.dig('options', 'data_source', 'name'), attr.dig('options')), { :include_blank => !attr['mandatory'] }, common_options %>
       <% else -%>
-        <%= select_f f, attr["name"].to_sym, attr.fetch('options', []), :to_s, :to_s, { :include_blank => !attr['mandatory'] }, label: _(label), label_help: attr['help'], :required => attr['mandatory'] %>
+        <%= select_f f, attr['name'].to_sym, attr.fetch('options', []), :to_s, :to_s, { :include_blank => !attr['mandatory'] }, common_options %>
         <%end -%>
     <% else  %>
       <% #FIXME: what to do with this? %>
-      <%= select_f f, attr["name"].to_sym, (options || []), :id, :name, { :include_blank => true }, label: _(label), label_help: attr['help'] %>
+      <%= select_f f, attr['name'].to_sym, (options || []), :id, :name, { :include_blank => true }, common_options %>
     <% end %>
   <% end %>
 <% end %>
