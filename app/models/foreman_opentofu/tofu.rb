@@ -27,7 +27,7 @@ module ForemanOpentofu
     # alias_attribute :username, :user
     # alias_attribute :endpoint, :url
 
-    delegate :available_attributes, :capabilities, to: :tofu_provider
+    delegate :available_attributes, :capabilities, :render_disk, :render_nic, to: :tofu_provider
 
     def available_images
       # make sure available_images can use this CR, e.g. for requesting data_source
@@ -90,12 +90,20 @@ module ForemanOpentofu
       ProviderTypeManager.find(opentofu_provider)
     end
 
-    def new_interface
-      { compute_attributes: {} }
+    def new_interface(attr = {})
+      OpenStruct.new(attr)
     end
 
-    def new_volume
-      { compute_attributes: {} }
+    def new_volume(attr = {})
+      OpenStruct.new(attr.merge({}))
+    end
+
+    def default_volumes
+      tofu_provider&.default_volumes || {}
+    end
+
+    def default_interfaces
+      tofu_provider&.default_interfaces || {}
     end
 
     def editable_network_interfaces?

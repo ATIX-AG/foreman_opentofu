@@ -1,0 +1,11 @@
+<%
+  volumes = Array.wrap(f.object.volumes)
+  volumes = [compute_resource.new_volume].compact if volumes.empty?
+%>
+<% volumes.each_with_index do |volume_obj, idx| %>
+  <%= fields_for "#{f.object_name}[volumes][#{idx}]", volume_obj do |i| %>
+    <%= render :partial => provider_partial(compute_resource, 'volume'),
+               :locals => { :f => i, :compute_resource => compute_resource, :new_host => new_host, :new_vm => new_vm, :remove_title => _('remove storage volume') },
+               :layout => "compute_resources_vms/form/#{item_layout}_layout" %>
+  <% end %>
+<% end %>

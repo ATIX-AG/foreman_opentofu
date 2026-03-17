@@ -1,0 +1,12 @@
+<%
+  association = compute_resource.interfaces_attrs_name
+  interfaces = Array.wrap(f.object.public_send(association))
+  interfaces = [compute_resource.new_interface].compact if interfaces.empty?
+%>
+<% interfaces.each_with_index do |interface_obj, idx| %>
+  <%= fields_for "#{f.object_name}[#{association}][#{idx}]", interface_obj do |i| %>
+    <%= render :partial => provider_partial(compute_resource, 'network'),
+               :locals => { :f => i, :compute_resource => compute_resource, :new_host => new_host, :new_vm => new_vm, :remove_title => _('remove network interface'), :selected_cluster => selected_cluster },
+               :layout => "compute_resources_vms/form/#{item_layout}_layout" %>
+  <% end %>
+<% end %>

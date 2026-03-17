@@ -156,5 +156,18 @@ module ForemanOpentofu
     test 'provided_attributes()' do
       assert_instance_of Hash, provider_type.provided_attributes
     end
+
+    test 'hetzner renders disk as hcloud_volume resource data' do
+      hetzner = ProviderTypeManager.find('hetzner')
+
+      rendered = hetzner.render_disk({ size: 50, format: 'ext4', automount: true }, nil, 0)
+
+      assert_equal 'hcloud_volume', rendered.dig(:resource, :type)
+      assert_equal 'volume1', rendered.dig(:resource, :name)
+      assert_equal 50, rendered.dig(:resource, :content, :size)
+      assert_equal :'hcloud_server.node1.id', rendered.dig(:resource, :content, :server_id)
+      assert rendered.dig(:resource, :content, :automount)
+      assert_equal 'ext4', rendered.dig(:resource, :content, :format)
+    end
   end
 end

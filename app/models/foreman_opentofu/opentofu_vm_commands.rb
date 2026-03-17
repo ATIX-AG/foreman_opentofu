@@ -1,5 +1,7 @@
 module ForemanOpentofu
   module OpentofuVMCommands
+    include ForemanOpentofu::VMCommandCollectionNormalization
+
     def find_vm_by_uuid(uuid)
       vm_command_errors('find vm') do
         tf_state = ForemanOpentofu::TfState.find_by(uuid: uuid)
@@ -10,16 +12,19 @@ module ForemanOpentofu
 
     def new_vm(args = {})
       vm_command_errors('new vm') do
-        args = default_attributes.merge(args)
+        args = default_attributes.merge(args).to_h.symbolize_keys
+        normalize_vm_args_collections!(args)
         executor = client(args)
         data = executor.run_new
-        OpenStruct.new(data['resource_changes'].first['change']['after'])
+        attrs = data['resource_changes'].first['change']['after'] || {}
+        OpenStruct.new(attrs)
       end
     end
 
     def create_vm(args = {})
       vm_command_errors('create vm') do
-        args = default_attributes.merge(args)
+        args = default_attributes.merge(args).to_h.symbolize_keys
+        normalize_vm_args_collections!(args)
         executor = client(args)
         output = executor.run_create
         ComputeVM.new(self, output)
@@ -50,6 +55,8 @@ module ForemanOpentofu
       raise StandardError, "VM with UUID #{uuid} does not exist" unless tf_state
       vm_command_errors('update vm') do
         attrs = attrs.empty? ? {} : attrs.first
+        attrs = attrs.to_h.symbolize_keys
+        normalize_vm_args_collections!(attrs)
         data = client({ 'name' => tf_state.name }.merge(attrs)).run_create
         ComputeVM.new(self, data)
       end

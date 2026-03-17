@@ -51,4 +51,30 @@ ForemanOpentofu::ProviderTypeManager.register('nutanix') do
     { "name": 'subnet_uuid', "type": 'select', "group": 'nic', "mandatory": true,
       "label": 'Subnet', "options": { "data_source": { "name": 'nutanix_subnets' }, "output_path_postfix": 'entities', "entity": { "id": 'metadata.uuid' } } },
   ]
+
+  self.disk_renderer = proc do |disk|
+    {
+      disk_list: {
+        disk_size_mib: disk[:size_gb] * 1024,
+        storage_config: {
+          storage_container_reference: {
+            kind: 'storage_container',
+            uuid: disk[:container_uuid],
+          },
+        },
+      },
+    }
+  end
+
+  self.nic_renderer = proc do |nic|
+    {
+      nic_list: {
+        subnet_reference: {
+          kind: 'subnet',
+          uuid: nic[:subnet_uuid],
+        },
+        nic_type: nic[:type] || 'NORMAL_NIC',
+      },
+    }
+  end
 end

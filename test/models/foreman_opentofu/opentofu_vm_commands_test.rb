@@ -44,6 +44,33 @@ module ForemanOpentofu
       assert_instance_of ComputeVM, vm
     end
 
+    test '#create_vm normalizes indexed volume and interface hashes before client call' do
+      captured_args = nil
+      @nutanix_cr.stubs(:client).with do |args|
+        captured_args = args
+        true
+      end.returns(@executor)
+      @executor.stubs(:run_create).returns({ 'id' => 'vm1' })
+
+      @nutanix_cr.create_vm(
+        'name' => 'vm1',
+        'volumes' => {
+          '0' => { 'size' => '13', 'label' => 'disk0' },
+        },
+        'interfaces_attributes' => {
+          '0' => { 'network_id' => 'net-1', 'adapter_type' => 'vmxnet3' },
+        }
+      )
+
+      assert_kind_of Array, captured_args[:volumes]
+      assert_equal '13', captured_args[:volumes][0][:size]
+      assert_equal 'disk0', captured_args[:volumes][0][:label]
+
+      assert_kind_of Array, captured_args[:interfaces]
+      assert_equal 'net-1', captured_args[:interfaces][0][:network_id]
+      assert_equal 'vmxnet3', captured_args[:interfaces][0][:adapter_type]
+    end
+
     test '#create_vm wraps exceptions' do
       @executor.stubs(:run_create).raises(StandardError.new('boom'))
 

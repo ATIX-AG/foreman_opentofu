@@ -6,7 +6,7 @@ module ForemanOpentofu
 
     def initialize(compute_resource, args = {})
       @compute_resource = compute_resource
-      @cr_attrs = args.to_h
+      @cr_attrs = args.to_h.with_indifferent_access
       @resource = @cr_attrs['resource']
       @host_name = @cr_attrs['name'] || 'test'
     end
