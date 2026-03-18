@@ -77,16 +77,6 @@ module ForemanOpentofu
           data[key] = format_value(value, conf['type'])
         end
         res << to_hcl(data, snippet: true)
-        res << nic_attributes(available_attributes)
-      end
-
-      def format_value(val, type)
-        case type
-        when 'string', 'select' then val
-        when 'bool' then Foreman::Cast.to_bool(val)
-        when 'number' then val.to_i
-        else val
-        end
       end
 
       def backend_block

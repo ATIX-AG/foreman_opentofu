@@ -31,6 +31,8 @@ resource "hcloud_server" "node1" {
   <%- end %>
   <%- end %>
 
+  <%= nic_attributes('network') %>
+
   public_net {
     ipv4_enabled = true
     ipv6_enabled = true

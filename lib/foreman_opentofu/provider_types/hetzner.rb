@@ -43,6 +43,14 @@ ForemanOpentofu::ProviderTypeManager.register('hetzner') do
         output_path_postfix: 'locations',
       } },
     { name: 'backups', type: 'bool', group: 'vm', help: 'Whether backups are enabled.' },
+    { name: 'network_id', type: 'select', group: 'nic', mandatory: true,
+      label: 'Network', options: {
+        data_source: {
+          name: 'hcloud_networks',
+          arguments: {},
+        },
+        output_path_postfix: 'networks',
+      } },
     { name: 'available_images', type: 'select',
       label: 'Base-OS-Image', options: {
         data_source: {

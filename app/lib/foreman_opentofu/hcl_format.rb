@@ -82,5 +82,14 @@ module ForemanOpentofu
       hcl << prefix_hcl(opts) if close_block_on_newline
       hcl << ']'
     end
+
+    def format_value(val, type)
+      case type
+      when 'string', 'select' then val
+      when 'bool' then Foreman::Cast.to_bool(val)
+      when 'number' then val.to_i
+      else val
+      end
+    end
   end
 end

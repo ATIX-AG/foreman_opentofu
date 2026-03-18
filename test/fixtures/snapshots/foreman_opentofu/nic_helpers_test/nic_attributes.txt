@@ -1,0 +1,8 @@
+  nic {
+    subnet_uuid = "abc1"
+    model = "VIRTIO"
+  }
+  nic {
+    subnet_uuid = "abc2"
+    model = "VIRTIO"
+  }
