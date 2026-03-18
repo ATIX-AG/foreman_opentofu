@@ -32,10 +32,10 @@ module ForemanOpentofu
     end
 
     # returns hash of available-attributes with attr-name as key
-    def available_attributes
+    def available_attributes(group = nil)
       raise "No available-attributes found for #{name}" unless attributes?
 
-      attributes.index_by { |e| e['name'] }.with_indifferent_access
+      attributes(group).index_by { |e| e['name'] }.with_indifferent_access
     end
 
     def attributes?

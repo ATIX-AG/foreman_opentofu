@@ -1,18 +1,21 @@
 module ForemanOpentofu
   module NicHelpers
-    def nic_attributes(available_attributes)
-      interfaces = @cr_attrs['interfaces'] || @cr_attrs['interfaces_attributes']
-      return '' if interfaces.blank?
+    include ForemanOpentofu::HclFormat
 
-      interfaces = normalize_interfaces(interfaces)
-      nic_defs = available_attributes.values.select do |attrs|
-        attrs['group'] == 'nic'
-      end
+    def nic_attributes(block_name = nil)
+      nic_defs = @compute_resource.available_attributes('nic')
+      interfaces = normalize_interfaces(@cr_attrs['interfaces'] || @cr_attrs['interfaces_attributes'])
       res = ''
       interfaces.each do |iface|
-        next if iface['subnet_uuid'].blank?
+        missing_attrs = nic_defs.select { |name, cfg| cfg[:mandatory] && iface[name].blank? }
+        # TODO: log the fact that we skip this due to missing mandatory attributes
+        next unless missing_attrs.empty?
 
-        res << build_attribute_block('nic_list', iface, nic_defs)
+        res << if block_given?
+                 yield(iface, nic_defs)
+               else
+                 block_to_hcl([block_name], sanitize_attributes(iface, nic_defs), depth: 1)
+               end
       end
       res
     end
@@ -29,15 +32,16 @@ module ForemanOpentofu
       end
     end
 
-    def build_attribute_block(block_name, attrs, nic_defs)
-      block_data = {}
+    def sanitize_attributes(attrs, defs)
+      data = {}
       attrs.each do |k, v|
         next if v.blank?
-        conf = nic_defs.find { |a| (a['name'] || a[:name]) == k }
-        next unless conf
-        block_data[k] = format_value(v, conf['type']) if conf
+
+        next unless defs[k]
+
+        data[k] = format_value(v, defs.dig(k, :type))
       end
-      block_to_hcl([block_name], block_data)
+      data
     end
   end
 end
