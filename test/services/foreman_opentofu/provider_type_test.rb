@@ -2,6 +2,7 @@ module ForemanOpentofu
   class ProviderTypeTest < ActiveSupport::TestCase
     # FIXME: use a non-existing ProviderType and stub the CR_ATTRS instead
     let(:provider_type) { ProviderTypeManager.find('nutanix') }
+    let(:compute_resource) { FactoryBot.create(:opentofu_nutanix_cr) }
 
     test 'has name' do
       assert_not_empty provider_type.name
@@ -29,6 +30,23 @@ module ForemanOpentofu
       assert_empty(attributes.select { |a| a['group'] == 'disk' })
     end
 
+    test 'find all by key' do
+      assert_instance_of Array, provider_type.search_attr_by('name', 'memory_size_mib')
+      assert_not_empty provider_type.search_attr_by('name', 'memory_size_mib')
+      assert_not_empty provider_type.search_attr_by('name', 'memory_size_mib', 'vm')
+      assert_empty provider_type.search_attr_by('name', 'memory_size_mib', 'nic')
+      assert_not_empty provider_type.search_attr_by('type', 'number')
+      assert_empty provider_type.search_attr_by('not_a', 'thing')
+    end
+
+    test 'find one by key' do
+      assert_nil provider_type.find_attr_by('not_a', 'thing')
+      assert_instance_of ActiveSupport::HashWithIndifferentAccess, provider_type.find_attr_by('name', 'memory_size_mib')
+      assert_not_nil provider_type.find_attr_by('name', 'memory_size_mib', 'vm')
+      assert_nil provider_type.find_attr_by('name', 'memory_size_mib', 'nic')
+      assert_not_nil provider_type.find_attr_by('type', 'number')
+    end
+
     test 'has available_attributes' do
       attr_hash = provider_type.available_attributes
 
@@ -45,6 +63,17 @@ module ForemanOpentofu
       assert_equal 'num_sockets', attrs['num_sockets']['name']
       assert_equal 'num_sockets', attrs[:num_sockets][:name]
       assert_equal 'num_sockets', attrs[:num_sockets]['name']
+    end
+
+    test 'attributes is empty Array if provider_attrs empty or nil' do
+      assert_equal [], provider_type.attributes('nogroup')
+
+      provider_type1 = ForemanOpentofu::ProviderType.new(provider_type.id)
+      provider_type1.provider_attrs = nil
+      assert_equal [], provider_type1.attributes
+
+      provider_type1.provider_attrs = []
+      assert_equal [], provider_type1.attributes
     end
 
     test 'provider_attrs converts input to HashWithIndifferentAccess' do
@@ -92,6 +121,40 @@ module ForemanOpentofu
       assert_instance_of Hash, provider_type1.default_attributes
       assert_not_empty provider_type1.default_attributes
       assert_equal def_attr, provider_type1.default_attributes
+    end
+
+    test 'available_images() raises Exception if attribute not available or supported' do
+      provider_type.expects(:find_attr_by).returns nil
+      assert_raise(NotImplementedError) do
+        provider_type.available_images(compute_resource)
+      end
+
+      provider_type.expects(:find_attr_by).returns({ 'options' => nil })
+      assert_raise(NotImplementedError) do
+        provider_type.available_images(compute_resource)
+      end
+
+      provider_type.expects(:find_attr_by).returns({ 'options' => 1 })
+      assert_raise(RuntimeError) do
+        provider_type.available_images(compute_resource)
+      end
+    end
+
+    test 'available_images() requests resource if dynamic value' do
+      opts = { 'data_source' => { 'name' => 'test' } }
+      provider_type.expects(:find_attr_by).returns({ 'options' => opts })
+      compute_resource.expects(:available_resource).with('test', opts)
+      provider_type.available_images(compute_resource)
+    end
+
+    test 'available_images() returns array if fixed options' do
+      opts = %w[option1 option2]
+      provider_type.expects(:find_attr_by).returns({ 'options' => opts })
+      assert_equal opts, provider_type.available_images(compute_resource)
+    end
+
+    test 'provided_attributes()' do
+      assert_instance_of Hash, provider_type.provided_attributes
     end
   end
 end

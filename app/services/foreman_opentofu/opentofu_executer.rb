@@ -13,6 +13,13 @@ module ForemanOpentofu
 
     def run(mode = '')
       Dir.mktmpdir('opentofu_') do |dir|
+        # FIXME: integrate the user_data-file into AppWrapper!
+        if @cr_attrs['user_data']
+          @user_data_filename = File.join(dir, 'userdata')
+          File.open(@user_data_filename, 'w') do |f|
+            f.write(@cr_attrs['user_data'])
+          end
+        end
         tofu = AppWrapper.new(dir, variables: {
           username: @compute_resource['user'],
           password: @compute_resource['password'],
@@ -96,6 +103,7 @@ module ForemanOpentofu
         host_name: @host_name,
         resource: @resource,
         dry_run: dry_run(mode),
+        user_data_filename: @user_data_filename,
       }
       scope = Foreman::Renderer.get_scope(source: template, variables: variables)
       source = Foreman::Renderer.get_source(template: template)

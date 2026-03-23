@@ -9,6 +9,9 @@ class TofuTest < ActiveSupport::TestCase
   should validate_presence_of :user
   should validate_presence_of :password
   should delegate_method(:available_attributes).to(:tofu_provider)
+  should delegate_method(:provided_attributes).to(:tofu_provider)
+  should delegate_method(:available_images).to(:tofu_provider)
+  should delegate_method(:capabilities).to(:tofu_provider)
 
   test 'validates provider is Tofu' do
     subject.provider = 'Unknown'
@@ -47,5 +50,19 @@ class TofuTest < ActiveSupport::TestCase
   test 'available_resource_ui_select() creates array for selectable_f()' do
     subject.expects(:available_resource).with('config_param1', {}).returns([{ 'name' => 'abc', 'id' => 123, 'foo' => 'bar' }])
     assert_equal [['abc', 123]], subject.available_resource_ui_select('config_param1')
+  end
+
+  test 'implements vm_ready(vm), if not delegatable to tofu_provider' do
+    vm = mock
+    vm.expects(:wait_for)
+    assert_not subject.tofu_provider.respond_to?(:vm_ready)
+    subject.vm_ready(vm)
+  end
+
+  test 'delegates vm_ready(vm)' do
+    vm = mock
+    subject.tofu_provider.expects(:vm_ready).with(vm)
+    assert_respond_to subject.tofu_provider, :vm_ready
+    subject.vm_ready(vm)
   end
 end
