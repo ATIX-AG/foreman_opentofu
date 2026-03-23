@@ -1,7 +1,9 @@
-require 'json'
-
 module ForemanOpentofu
   class OpentofuExecuter
+    # 'destroy' works with TfState rather than the actual tf-file
+    # also it might not receive all the necessary data to create a valid tf-file
+    DRY_RUN_MODES = %w[destroy test].freeze
+
     def initialize(compute_resource, args = {})
       @compute_resource = compute_resource
       @cr_attrs = args.to_h
@@ -18,7 +20,7 @@ module ForemanOpentofu
         })
         @use_backend = %w[create destroy output].include?(mode)
         @token = create_token(@host_name) if @use_backend
-        tofu.main_configuration = render_template
+        tofu.main_configuration = render_template(mode)
         tofu.init
         yield(tofu)
       end
@@ -84,7 +86,7 @@ module ForemanOpentofu
 
     private
 
-    def render_template
+    def render_template(mode)
       template = provision_template
       variables = {
         compute_resource: @compute_resource,
@@ -93,6 +95,7 @@ module ForemanOpentofu
         token: @token,
         host_name: @host_name,
         resource: @resource,
+        dry_run: dry_run(mode),
       }
       scope = Foreman::Renderer.get_scope(source: template, variables: variables)
       source = Foreman::Renderer.get_source(template: template)
@@ -100,6 +103,10 @@ module ForemanOpentofu
       raise ::Foreman::Exception, N_('Unable to render provisioning template') unless rendered_template
 
       rendered_template
+    end
+
+    def dry_run(mode)
+      mode.empty? || DRY_RUN_MODES.include?(mode)
     end
 
     def provision_template

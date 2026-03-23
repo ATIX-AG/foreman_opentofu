@@ -16,7 +16,7 @@ provider "ovirt" {
   tls_insecure = true
 }
 
-
+<% unless @dry_run %>
 data "ovirt_blank_template" "blank" {
 }
 
@@ -40,3 +40,4 @@ resource "ovirt_vm" "vm" {
 output "uuid" {
   value = ovirt_vm.vm
 }
+<% end %>
