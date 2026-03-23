@@ -1,0 +1,77 @@
+
+
+terraform {
+  required_providers {
+    hcloud = {
+      source = "hetznercloud/hcloud"
+      version = ">= 1.60"
+    }
+  }
+  backend "http" {
+    address = "http://foreman.example.com/api/v2/tf_states/hetzner_host"
+    headers = {
+      Authorization = "Token very_secret_token"
+    }
+  }
+}
+
+provider "hcloud" {
+  token = var.password
+}
+
+
+
+
+# Create a new server running debian
+resource "hcloud_server" "node1" {
+  name        = "hetzner_host"
+  # image       = "debian-12"
+  # server_type = "cx23"
+
+  
+server_type = "cx23"
+
+
+
+
+  
+
+  public_net {
+    ipv4_enabled = true
+    ipv6_enabled = true
+  }
+}
+
+locals {
+  disks = {}
+}
+
+resource "hcloud_volume" "volumes" {
+  for_each  = { for k, d in local.disks : tostring(k) => d if try(d["_delete"], "0") != "1" }
+  name      = try(each.value.name, "volume-${each.key}")
+  size      = try(each.value.size, 20)
+  server_id = hcloud_server.node1.id
+  automount = try(each.value.automount, null)
+  format    = try(each.value.format, null)
+}
+
+
+output "vm_attrs" {
+  value = {
+      identity = hcloud_server.node1.id
+      vm_ip_address = hcloud_server.node1.ipv4_address
+      vm_ip6_address = hcloud_server.node1.ipv6_address
+      vm = hcloud_server.node1
+      volumes_attributes = try({
+        for k, v in try(local.disks, {}) : tostring(try(v.id, k)) => {
+          id = try(v.id, null)
+          name = try(v.name, "volume-${k}")
+          size = try(v.size, 20)
+          automount = try(v.automount, null)
+          format = try(v.format, null)
+        } if try(v["_delete"], "0") != "1"
+      }, {})
+}
+}
+
+

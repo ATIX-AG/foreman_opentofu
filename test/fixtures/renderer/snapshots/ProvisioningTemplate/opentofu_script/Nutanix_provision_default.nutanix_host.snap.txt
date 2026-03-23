@@ -1,0 +1,62 @@
+
+
+terraform {
+  required_providers {
+    nutanix = {
+      source = "nutanix/nutanix"
+    }
+  }
+  backend "http" {
+    address = "http://foreman.example.com/api/v2/tf_states/nutanix_host"
+    headers = {
+      Authorization = "Token very_secret_token"
+    }
+  }
+}
+
+provider "nutanix" {
+  username = var.username
+  password = var.password
+  endpoint = var.endpoint
+  insecure = true
+}
+
+
+
+data "nutanix_clusters" "clusters" {}
+
+resource "nutanix_virtual_machine" "vm" {
+
+  name         = "nutanix_host"
+
+  
+cluster_uuid = "my_cluster_uuid"
+
+  
+  nic_list {
+    subnet_reference = {
+      kind = "subnet"
+      uuid = "my_subnet_uuid"
+    }
+    nic_type = "NORMAL_NIC"
+  }
+  
+  disk_list {
+    disk_size_mib = 40960
+    storage_config = {
+      storage_container_reference = {
+        kind = "storage_container"
+        uuid = "my_container_uuid"
+      }
+    }
+  }
+
+}
+
+output "vm_attrs" {
+  value = {
+      identity = nutanix_virtual_machine.vm.id
+      mac = nutanix_virtual_machine.vm.nic_list[0].mac_address
+  }
+}
+

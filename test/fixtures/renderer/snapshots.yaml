@@ -1,0 +1,6 @@
+# Edit this file and then run: rake foreman_opentofu:snapshots:generate RAILS_ENV=test
+
+files:
+  - nutanix_provision_default.erb
+  - hetzner_provision_host.erb
+
