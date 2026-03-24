@@ -3,13 +3,9 @@ module Orchestration
     module Compute
       extend ActiveSupport::Concern
 
-      def computeValue(_foreman_attr, fog_attr)
-        value = ''
-        value += vm.send(fog_attr).to_s
-        value
-      end
-
       def match_macs_to_nics(fog_attr)
+        return super unless compute_resource.is_a?(ForemanOpentofu::Tofu)
+
         interfaces.select(&:physical?).each do |nic|
           mac = vm.send(fog_attr)
           logger.debug "Orchestration::Compute: nic #{nic.inspect} assigned to #{vm.inspect}"
@@ -21,6 +17,8 @@ module Orchestration
       end
 
       def setUserData
+        return super unless compute_resource.is_a?(ForemanOpentofu::Tofu)
+
         logger.info "Rendering UserData template for #{name}"
         template = provisioning_template(kind: 'cloud-init')
         template ||= provisioning_template(kind: 'user_data')
