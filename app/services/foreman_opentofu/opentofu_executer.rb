@@ -21,9 +21,9 @@ module ForemanOpentofu
           end
         end
         tofu = AppWrapper.new(dir, variables: {
-          username: @compute_resource['user'],
-          password: @compute_resource['password'],
-          endpoint: @compute_resource['url'],
+          username: @compute_resource.user,
+          password: @compute_resource.password,
+          endpoint: @compute_resource.url,
         })
         @use_backend = %w[create destroy output].include?(mode)
         @token = create_token(@host_name) if @use_backend
