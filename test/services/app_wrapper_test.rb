@@ -49,8 +49,20 @@ module ForemanOpentofu
 
     test 'variables specified as envvars' do
       envvars = app_wrapper.send(:envvars)
-      assert_empty(envvars.keys.reject { |var| var.starts_with?('TF_VAR_') })
       assert_equal 'secret', envvars['TF_VAR_password']
+    end
+
+    test 'terraform variables all start with TF_VAR_' do
+      terraform_envvars = app_wrapper.send(:terraform_envvars)
+      assert_empty(terraform_envvars.keys.reject { |var| var.starts_with?('TF_VAR_') })
+    end
+
+    test 'common variables as envvars' do
+      envvars = app_wrapper.send(:envvars)
+      assert_equal ForemanOpentofu::OPENTOFU_PLUGIN_CACHE_PATH, envvars['TF_PLUGIN_CACHE_DIR']
+      %w[TEMPDIR TMPDIR TMP TEMP].each do |var|
+        assert_equal ForemanOpentofu::OPENTOFU_TMP_PATH, envvars[var]
+      end
     end
 
     test 'create_variables_file()' do
