@@ -12,7 +12,7 @@ module ForemanOpentofu
     end
 
     def run(mode = '')
-      Dir.mktmpdir('opentofu_') do |dir|
+      Dir.mktmpdir('opentofu_', ForemanOpentofu::OPENTOFU_TMP_PATH) do |dir|
         # FIXME: integrate the user_data-file into AppWrapper!
         if @cr_attrs['user_data']
           @user_data_filename = File.join(dir, 'userdata')

@@ -100,8 +100,22 @@ module ForemanOpentofu
       cmd.map { |item| "'#{item}'" }.append('2>&1').join(' ')
     end
 
-    def envvars
+    def common_envvars
+      {
+        'TF_PLUGIN_CACHE_DIR' => ForemanOpentofu::OPENTOFU_PLUGIN_CACHE_PATH,
+        'TEMPDIR' => ForemanOpentofu::OPENTOFU_TMP_PATH,
+        'TMPDIR' => ForemanOpentofu::OPENTOFU_TMP_PATH,
+        'TMP' => ForemanOpentofu::OPENTOFU_TMP_PATH,
+        'TEMP' => ForemanOpentofu::OPENTOFU_TMP_PATH,
+      }
+    end
+
+    def terraform_envvars
       @variables.transform_keys { |variable| "TF_VAR_#{variable}" }
+    end
+
+    def envvars
+      common_envvars.merge(terraform_envvars)
     end
 
     def execute(cmd)
