@@ -1,0 +1,93 @@
+policy_module(foreman_opentofu, 1.0)
+
+############################################################
+# Custom file types used only for the
+# dedicated OpenTofu workspace under:
+#   /var/lib/foreman-opentofu
+############################################################
+
+# Base directory: /var/lib/foreman-opentofu
+type foreman_opentofu_base_t;
+files_type(foreman_opentofu_base_t)
+
+# Provider/plugin cache: /var/lib/foreman-opentofu/plugin-cache
+type foreman_opentofu_cache_t;
+files_type(foreman_opentofu_cache_t)
+
+# Temporary work tree: /var/lib/foreman-opentofu/tmp
+type foreman_opentofu_work_t;
+files_type(foreman_opentofu_work_t)
+
+require {
+    type foreman_rails_t;
+    type cgroup_t;
+    type sysctl_net_t;
+
+    # Directory operations needed for creating/removing OpenTofu work/cache directories.
+    class dir { add_name create getattr open read remove_name rmdir search write };
+
+    # File operations needed
+    class file { append create execute execute_no_trans getattr ioctl lock map open read rename setattr unlink write };
+
+    # Symlink handling inside cache/work trees.
+    class lnk_file { create getattr read unlink };
+
+    # Unix socket files created in the controlled tmp tree for tofu <-> provider communication.
+    class sock_file { create getattr open read write unlink };
+
+    # Required so tofu can connect to the provider plugin over a local unix stream socket.
+    class unix_stream_socket connectto;
+}
+
+############################################################
+# Exact system lookups observed in AVCs
+############################################################
+
+# tofu inspects /sys/fs/cgroup during init/plan
+allow foreman_rails_t cgroup_t:dir search;
+
+# provider inspects /proc/sys/net and reads sysctl files
+allow foreman_rails_t sysctl_net_t:dir search;
+allow foreman_rails_t sysctl_net_t:file { getattr open read };
+
+# tofu connects to the provider through a local unix socket
+allow foreman_rails_t self:unix_stream_socket connectto;
+
+############################################################
+# Base directory: /var/lib/foreman-opentofu
+############################################################
+
+# Allow tofu to traverse the base dir and create child
+# entries directly below it, such as plugin-cache/tmp.
+allow foreman_rails_t foreman_opentofu_base_t:dir { create search getattr open read write add_name };
+
+############################################################
+# Plugin cache: /var/lib/foreman-opentofu/plugin-cache
+############################################################
+
+# Allow creating and managing cache subdirectories.
+allow foreman_rails_t foreman_opentofu_cache_t:dir { create search getattr open read write add_name remove_name };
+
+# Allow downloading providers, adjusting permissions,
+# locking .lock files, and executing provider binaries
+# directly from the cache tree.
+allow foreman_rails_t foreman_opentofu_cache_t:file { create getattr open read write append rename unlink execute execute_no_trans map ioctl lock setattr };
+
+# Allow minimal symlink handling inside the cache tree.
+allow foreman_rails_t foreman_opentofu_cache_t:lnk_file { create getattr read unlink };
+
+############################################################
+# Work tree: /var/lib/foreman-opentofu/tmp
+############################################################
+
+# Allow creating/removing per-run temporary directories.
+allow foreman_rails_t foreman_opentofu_work_t:dir { create search getattr open read write add_name remove_name rmdir };
+
+# Allow creating and managing files in the work tree.
+allow foreman_rails_t foreman_opentofu_work_t:file { create getattr open read write append rename unlink execute execute_no_trans map ioctl lock setattr };
+
+# Allow minimal symlink handling in the work tree.
+allow foreman_rails_t foreman_opentofu_work_t:lnk_file { create getattr read unlink };
+
+# Allow creating local unix socket files in the controlled tmp tree
+allow foreman_rails_t foreman_opentofu_work_t:sock_file { create getattr open read write unlink };

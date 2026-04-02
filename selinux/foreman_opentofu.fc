@@ -1,0 +1,3 @@
+/var/lib/foreman-opentofu$                                 gen_context(system_u:object_r:foreman_opentofu_base_t,s0)
+/var/lib/foreman-opentofu/plugin-cache(/.*)?               gen_context(system_u:object_r:foreman_opentofu_cache_t,s0)
+/var/lib/foreman-opentofu/tmp(/.*)?                        gen_context(system_u:object_r:foreman_opentofu_work_t,s0)
