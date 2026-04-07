@@ -10,6 +10,36 @@ The plugin is designed to be easily extendable and can support multiple infrastr
 
 ## Installation
 
+Install the rubygem as usual or use the RPM/Deb package for your distribution.
+
+If you use the rubygem, make sure to create the folllowing directory and set the correct permissions:
+
+```shell
+
+mkdir -p /var/lib/foreman-opentofu
+mkdir -p /var/lib/foreman-opentofu/plugin-cache
+mkdir -p /var/lib/foreman-opentofu/tmp
+
+chown -R foreman:foreman /var/lib/foreman-opentofu
+chmod 755 /var/lib/foreman-opentofu
+chmod 755 /var/lib/foreman-opentofu/plugin-cache
+chmod 700 /var/lib/foreman-opentofu/tmp
+```
+
+## SELinux
+
+If you have installed the rubygem manually, you need to set the correct SELinux context for the plugin to work properly.
+Re-use the selinux directives defined in the selinux directory of the plugin.
+
+```shell
+cd selinux
+make clean && make all
+mkdir -p /usr/share/selinux/targeted/
+install -m 0600 foreman_opentofu.pp /usr/share/selinux/targeted/
+/usr/sbin/semodule -i /usr/share/selinux/targeted/foreman_opentofu.pp
+/sbin/restorecon -ri /var/lib/foreman-opentofu/
+```
+
 
 ## Usage
 Create a openTofu compute resource and set:

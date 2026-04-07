@@ -12,7 +12,7 @@ Gem::Specification.new do |s|
   # also update locale/gemspec.rb
   s.description = 'Plugin to provision host using opentofu with different compute resources'
 
-  s.files = Dir['{app,config,db,lib,locale}/**/*'] + ['LICENSE', 'Rakefile', 'README.md']
+  s.files = Dir['{app,config,db,lib,locale,selinux}/**/*'] + ['LICENSE', 'Rakefile', 'README.md']
   s.test_files = Dir['test/**/*']
 
   s.required_ruby_version = '>= 2.7', '< 4'
