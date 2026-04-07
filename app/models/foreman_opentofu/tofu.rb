@@ -73,7 +73,24 @@ module ForemanOpentofu
     end
 
     def default_attributes
-      tofu_provider&.default_attributes || {}
+      # FIXME: make sure we have default attributes for all `mandatory`-attributes
+      #        if attribute is 'select' just use first value (e.g. from data-source).
+      res = (tofu_provider&.default_attributes || {}).with_indifferent_access
+      missing_attributes = tofu_provider.attributes('vm').select { |attr| attr[:mandatory] && !res.has_key?(attr[:name]) }
+      if missing_attributes.present?
+        Rails.logger.debug("Mandatory attributes missing, try to determine defaults: #{missing_attributes.map{|a| a[:name]}.join(', ')}")
+        missing_attributes.each do |attr|
+          res[attr[:name]] = if attr[:type] == 'select'
+                        case attr[:options]
+                        when Array then attr[:options].first
+                        when Hash then fetch_resource(attr.dig(:options, :data_source, :name), attr[:options])&.first&.fetch('id')
+                          # TODO: needs to be defined :-)
+                        else ''
+                        end
+                      end
+        end
+      end
+      res
     end
 
     def supports_update?
