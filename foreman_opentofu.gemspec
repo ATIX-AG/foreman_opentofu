@@ -5,12 +5,12 @@ Gem::Specification.new do |s|
   s.version     = ForemanOpentofu::VERSION
   s.metadata    = { 'is_foreman_plugin' => 'true' }
   s.license     = 'GPL-3.0-only'
-  s.authors     = ['ATIX-AG']
+  s.authors     = ['ATIX AG']
   s.email       = ['info@atix.de']
   s.homepage    = 'https://github.com/ATIX-AG/foreman_opentofu'
-  s.summary     = 'Plugin to provision host using opentofu'
+  s.summary     = 'Plugin to provision hosts using OpenTofu'
   # also update locale/gemspec.rb
-  s.description = 'Plugin to provision host using opentofu with different compute resources'
+  s.description = 'Plugin to provision hosts using OpenTofu with different compute resources'
 
   s.files = Dir['{app,config,db,lib,locale,selinux}/**/*'] + ['LICENSE', 'Rakefile', 'README.md']
   s.test_files = Dir['test/**/*']
