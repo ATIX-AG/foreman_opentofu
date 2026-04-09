@@ -22,16 +22,21 @@ AllCops:
 Metrics/AbcSize:
   Max: 25
 
+Metrics/BlockLength:
+  Exclude:
+    - lib/foreman_opentofu/engine.rb
+    - lib/foreman_opentofu/provider_types/*.rb
+    - test/lib/foreman_opentofu/concerns/base_template_scope_extensions_test.rb 
+
 Metrics/ClassLength:
   Max: 400
 
 Metrics/MethodLength:
   Max: 40
 
-Metrics/BlockLength:
+Metrics/ModuleLength:
   Exclude:
-    - lib/foreman_opentofu/engine.rb
-    - lib/foreman_opentofu/provider_types/*.rb
+    - app/lib/foreman_opentofu/concerns/base_template_scope_extensions.rb
 
 Minitest/AssertEmptyLiteral:
   Enabled: false

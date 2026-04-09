@@ -124,7 +124,10 @@ module ForemanOpentofu
         content: '<%= build_disks %>'
       )
       scope = ::Foreman::Renderer.get_scope(variables: {
-        cr_attrs: { 'volumes' => [{ 'size' => 50 }] },
+        cr_attrs: { 'volumes' => [
+          { 'size' => 50 },
+          { '_delete' => '1', 'size' => 60 },  # must be filtered out ;-)
+        ] },
         compute_resource: cr,
       })
       block = ::Foreman::Renderer.render(source, scope)
@@ -132,6 +135,37 @@ module ForemanOpentofu
       assert_includes block, 'resource "hcloud_volume" "volume1"'
       assert_includes block, 'size = 50'
       assert_includes block, 'server_id = hcloud_server.node1.id'
+      assert_not_includes block, 'size = 60'
+    end
+
+    test 'build_nics renders provider-defined resource snippets' do
+      cr = FactoryBot.create(:opentofu_nutanix_cr)
+      cr.stubs(:default_nics).returns([])
+      cr.stubs(:render_nic).with({ 'network_id' => '123' }, anything, 0).returns(
+        {
+          resource: {
+            type: 'provider_nic',
+            name: 'network1',
+            content: { network_id: 123 },
+          },
+        }
+      )
+      source = ::Foreman::Renderer::Source::String.new(
+        name: 'Parameter',
+        content: '<%= build_nics %>'
+      )
+      scope = ::Foreman::Renderer.get_scope(variables: {
+        cr_attrs: { 'interfaces' => [
+          { '_destroy' => '0', 'compute_attributes' => { 'network_id' => '123' } },
+          { '_destroy' => '1', 'compute_attributes' => { 'network_id' => '456' } },
+        ] },
+        compute_resource: cr,
+      })
+      block = ::Foreman::Renderer.render(source, scope)
+
+      assert_includes block, 'resource "provider_nic" "network1"'
+      assert_includes block, 'network_id = 123'
+      assert_not_includes block, 'network_id = 456'
     end
   end
 end
