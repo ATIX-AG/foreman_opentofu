@@ -97,24 +97,32 @@ module ForemanOpentofu
         disks = @cr_attrs['volumes'].presence || @cr_attrs['volumes_attributes'].presence || @compute_resource.default_volumes
         disks = [disks] if disks.is_a?(Hash)
         disks.each_with_index.map do |disk, index|
+          # drop removed disks; tofu will drop them automatically, if they are no longer defined
+          next if disk['_delete'].to_i == 1
+
           data = @compute_resource.render_disk(disk, self, index)
           render_provider_data(data)
         end.join("\n")
       end
 
       def build_nics
-        nics = @cr_attrs['interfaces'].presence || @cr_attrs['interfaces_attributes'].presence || @compute_resource.default_interfaces
-        nics = normalize_interfaces(nics).map do |nic|
-          nic.respond_to?(:with_indifferent_access) ? nic.with_indifferent_access[:compute_attributes].presence || nic : nic
-        end
-
-        nics.each_with_index.map do |nic, index|
+        nics_from_cr_attrs.each_with_index.map do |nic, index|
           data = @compute_resource.render_nic(nic, self, index)
           render_provider_data(data)
         end.join("\n")
       end
 
       private
+
+      def nics_from_cr_attrs
+        nics = @cr_attrs['interfaces'].presence || @cr_attrs['interfaces_attributes'].presence || @compute_resource.default_interfaces
+        normalize_interfaces(nics).map do |nic|
+          # drop removed nics; tofu will drop them automatically, if they are no longer defined
+          next if nic['_destroy'].to_i == 1
+
+          nic.respond_to?(:with_indifferent_access) ? nic.with_indifferent_access[:compute_attributes].presence || nic : nic
+        end.compact
+      end
 
       def render_provider_data(data)
         if data.is_a?(Hash) && data[:resource].present?
