@@ -1,10 +1,10 @@
 [![Ruby Tests](https://github.com/ATIX-AG/foreman_opentofu/actions/workflows/ruby.yml/badge.svg)](https://github.com/ATIX-AG/foreman_opentofu/actions/workflows/ruby.yml)
 
-# ForemanOpenTOFU
+# Foreman OpenTofu
 
-[Foreman](http://theforeman.org/) plugin that adds that adds a generic openTOFU-based compute resource, enabling host provisioning through openTOFU scripts instead of provider-specific SDK integrations such as fog-vsphere.
+[Foreman](http://theforeman.org/) plugin that adds that adds a generic OpenTofu-based compute resource, enabling host provisioning through OpenTofu scripts instead of provider-specific SDK integrations such as fog-vsphere.
 
-This plugin introduces a new provisioning model where Foreman remains responsible for host lifecycle and orchestration, while openTOFU handles infrastructure creation using its provider ecosystem.
+This plugin introduces a new provisioning model where Foreman remains responsible for host lifecycle and orchestration, while OpenTofu handles infrastructure creation using its provider ecosystem.
 
 The plugin is designed to be easily extendable and can support multiple infrastructure platforms (for example Nutanix, Hetzner) without requiring a dedicated Foreman compute resource plugin per provider.
 
@@ -42,9 +42,9 @@ install -m 0600 foreman_opentofu.pp /usr/share/selinux/targeted/
 
 
 ## Usage
-Create a openTofu compute resource and set:
-  * Provider: openTofu
-  * Opentofu Provider: Select desired hypervisor supported by openTofu plugin
+Create a OpenTofu compute resource and set:
+  * Provider: OpenTofu
+  * OpenTofu Provider: Select desired hypervisor supported by OpenTofu plugin
   * URL: Hypervisor specific URL
     
 
@@ -52,17 +52,17 @@ Then add all necessary information to the form.
 
 Provisioning workflow:
 
- * Create a host in Foreman using the openTOFU based compute resource
+ * Create a host in Foreman using the OpenTofu based compute resource
 
  * Foreman passes host parameters to the plugin
 
- * The plugin renders and executes openTOFU plans
+ * The plugin renders and executes OpenTofu plans
 
- * openTOFU provisions the infrastructure
+ * OpenTofu provisions the infrastructure
 
  * Foreman continues with OS provisioning and configuration
 
-Provider-specific details (for example Nutanix, Hetzner) are handled entirely through openTOFU scripts.
+Provider-specific details (for example Nutanix, Hetzner) are handled entirely through OpenTofu scripts.
 
 ### Create new ProviderType
 
@@ -124,7 +124,7 @@ The name of the file must be the same as the provider-type name we set in the ne
 
 Sometimes it is necessary to provide a list of possible values that are defined by the backend-service.
 Curating the 'options'-Array is tedious at best or not possible if multiple instances of the backend service are in use.
-This can be addressed by specifiying an OpenTofu-Provider's [DataSource](https://opentofu.org/docs/language/data-sources/) in the following way:
+This can be addressed by specifiying an OpenTofu provider's [DataSource](https://opentofu.org/docs/language/data-sources/) in the following way:
 
 ```json
 {
@@ -222,7 +222,7 @@ end
 
 > See [Foreman dev setup](https://github.com/theforeman/foreman/blob/develop/developer_docs/foreman_dev_setup.asciidoc)
 
-* You need a openTOFU installed on your machine.
+* You need a OpenTofu installed on your machine.
 * You need ruby 2.7. You can install it with [asdf-vm](https://asdf-vm.com).
 
 ### Platform
@@ -256,7 +256,7 @@ bundle install
 RAILS_ENV=development bundle exec bin/rake permissions:reset password=changeme
 ```
 
-* In foreman_openTofu source directory, check code syntax with rubocop and foreman rules:
+* In the `foreman_opentofu` directory, check code syntax with rubocop and foreman rules:
 
 ```shell
 bundle exec rubocop
