@@ -1,7 +1,7 @@
 module ForemanOpentofu
   class ProviderType
     attr_reader :id, :name, :default_attributes
-    attr_accessor :capabilities
+    attr_accessor :capabilities, :disk_renderer, :nic_renderer
 
     def initialize(id)
       @id = id.to_sym
@@ -69,6 +69,16 @@ module ForemanOpentofu
       #       network-based deployment needs MAC to set-up DHCP, but
       #       on image-based deployment we usually only get IPv4/6-address
       { mac: :mac }
+    end
+
+    def render_disk(disk, context, *args)
+      return '' unless disk_renderer
+      context.instance_exec(disk, *args, &disk_renderer)
+    end
+
+    def render_nic(nic, context, *args)
+      return '' unless nic_renderer
+      context.instance_exec(nic, *args, &nic_renderer)
     end
   end
 end

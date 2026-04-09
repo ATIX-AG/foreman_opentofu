@@ -92,6 +92,41 @@ module ForemanOpentofu
           ''
         end
       end
+
+      def build_disks
+        disks = @cr_attrs['volumes'].presence || @cr_attrs['volumes_attributes'].presence || @compute_resource.default_volumes
+        disks = [disks] if disks.is_a?(Hash)
+        disks.each_with_index.map do |disk, index|
+          data = @compute_resource.render_disk(disk, self, index)
+          render_provider_data(data)
+        end.join("\n")
+      end
+
+      def build_nics
+        nics = @cr_attrs['interfaces'].presence || @cr_attrs['interfaces_attributes'].presence || @compute_resource.default_interfaces
+        nics = normalize_interfaces(nics).map do |nic|
+          nic.respond_to?(:with_indifferent_access) ? nic.with_indifferent_access[:compute_attributes].presence || nic : nic
+        end
+
+        nics.each_with_index.map do |nic, index|
+          data = @compute_resource.render_nic(nic, self, index)
+          render_provider_data(data)
+        end.join("\n")
+      end
+
+      private
+
+      def render_provider_data(data)
+        if data.is_a?(Hash) && data[:resource].present?
+          resource = data[:resource]
+          block_to_hcl(['resource', resource[:type], resource[:name]], resource[:content], depth: 0)
+        elsif data.is_a?(Hash) && data.size == 1 && data.values.first.is_a?(Hash)
+          block_name, block_content = data.first
+          block_to_hcl([block_name.to_s], block_content, depth: 1)
+        else
+          to_hcl(data, snippet: true)
+        end
+      end
     end
   end
 end

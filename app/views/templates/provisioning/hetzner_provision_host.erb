@@ -39,6 +39,8 @@ resource "hcloud_server" "node1" {
   }
 }
 
+<%= build_disks %>
+
 output "vm_attrs" {
   value = {
       identity = hcloud_server.node1.id

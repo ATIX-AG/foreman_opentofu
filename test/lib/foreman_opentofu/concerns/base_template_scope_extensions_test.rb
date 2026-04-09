@@ -106,5 +106,32 @@ module ForemanOpentofu
       assert_not_empty block
       assert_snapshot self, 'vm_attributes', block
     end
+
+    test 'build_disks renders provider-defined resource snippets' do
+      cr = FactoryBot.create(:opentofu_nutanix_cr)
+      cr.stubs(:default_volumes).returns([])
+      cr.stubs(:render_disk).with({ 'size' => 50 }, anything, 0).returns(
+        {
+          resource: {
+            type: 'hcloud_volume',
+            name: 'volume1',
+            content: { size: 50, server_id: :'hcloud_server.node1.id' },
+          },
+        }
+      )
+      source = ::Foreman::Renderer::Source::String.new(
+        name: 'Parameter',
+        content: '<%= build_disks %>'
+      )
+      scope = ::Foreman::Renderer.get_scope(variables: {
+        cr_attrs: { 'volumes' => [{ 'size' => 50 }] },
+        compute_resource: cr,
+      })
+      block = ::Foreman::Renderer.render(source, scope)
+
+      assert_includes block, 'resource "hcloud_volume" "volume1"'
+      assert_includes block, 'size = 50'
+      assert_includes block, 'server_id = hcloud_server.node1.id'
+    end
   end
 end

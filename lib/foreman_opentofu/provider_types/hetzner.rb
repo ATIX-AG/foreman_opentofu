@@ -5,6 +5,10 @@ require "#{ForemanOpentofu::Engine.root}/app/services/foreman_opentofu/provider_
 ForemanOpentofu::ProviderTypeManager.register('hetzner') do
   @capabilities = [:image]
 
+  def default_volumes
+    { name: 'volume1', size: 50, automount: true, format: 'ext4' }
+  end
+
   def provided_attributes
     {
       ip: :vm_ip_address,
@@ -51,6 +55,14 @@ ForemanOpentofu::ProviderTypeManager.register('hetzner') do
         },
         output_path_postfix: 'networks',
       } },
+    { name: 'name', type: 'string', group: 'disk', mandatory: true,
+      label: 'Volume Name' },
+    { name: 'size', type: 'number', group: 'disk', mandatory: true,
+      label: 'Size (GB)' },
+    { name: 'automount', type: 'bool', group: 'disk', mandatory: false,
+      label: 'Automount' },
+    { name: 'format', type: 'select', group: 'disk', mandatory: false,
+      label: 'Format', options: %w[ext4 xfs] },
     { name: 'available_images', type: 'select',
       label: 'Base-OS-Image', options: {
         data_source: {
@@ -63,4 +75,24 @@ ForemanOpentofu::ProviderTypeManager.register('hetzner') do
         output_path_postfix: 'images',
       } },
   ]
+
+  self.disk_renderer = proc do |disk, index = 0|
+    disk = disk.with_indifferent_access
+    volume_name = disk[:name].presence || "volume#{index + 1}"
+    volume_data = {
+      name: volume_name,
+      size: disk[:size].presence || 50,
+      server_id: :"hcloud_server.node1.id",
+    }
+    volume_data[:automount] = Foreman::Cast.to_bool(disk[:automount]) unless disk[:automount].nil?
+    volume_data[:format] = disk[:format] if disk[:format].present?
+
+    {
+      resource: {
+        type: 'hcloud_volume',
+        name: "volume#{index + 1}",
+        content: volume_data,
+      },
+    }
+  end
 end
