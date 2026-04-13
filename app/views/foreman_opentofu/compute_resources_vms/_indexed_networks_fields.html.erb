@@ -12,9 +12,7 @@
       <%= render :partial => 'foreman_opentofu/compute_resources_vms/form/tofu/interfaces_fields',
                  :locals => { :f => f, :compute_resource => compute_resource, :new_host => new_host, :new_vm => new_vm, :item_layout => item_layout, :selected_cluster => selected_cluster } %>
 
-      <% if new_vm %>
-        <%= add_child_link '+ ' + _("Add Interface"), compute_resource.interfaces_attrs_name, { :class => "info", :title => _('add new network interface') } %>
-      <% end %>
+      <%= add_child_link '+ ' + _("Add Interface"), compute_resource.interfaces_attrs_name, { :class => "info", :title => _('add new network interface') } %>
     <% else %>
       <div class="col-md-12">
         <%= _('No networks found.') %>

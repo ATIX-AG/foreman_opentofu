@@ -1,0 +1,5 @@
+<% if compute_resource.is_a?(ForemanOpentofu::Tofu) %>
+  <%= remove_child_link('X', f, { method: :'_delete', title: local_assigns[:remove_title], class: 'label label-danger' }) %>
+<% elsif new_vm %>
+  <%= remove_child_link('X', f, { method: :'_delete', title: local_assigns[:remove_title], class: 'label label-danger' }) %>
+<% end %>
