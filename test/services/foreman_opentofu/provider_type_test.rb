@@ -123,6 +123,42 @@ module ForemanOpentofu
       assert_equal def_attr, provider_type1.default_attributes
     end
 
+    test 'no default_interfaces returns nil' do
+      provider_type.instance_variable_set(:@default_interfaces, nil)
+      assert_nil provider_type.default_interfaces
+    end
+
+    test 'returns default_interfaces, if any' do
+      provider_type1 = ForemanOpentofu::ProviderType.new(provider_type.id)
+      def_attr = {
+        nic_type: 'VIRTIO',
+      }
+
+      provider_type1.instance_variable_set(:@default_interfaces, def_attr)
+      assert_not_nil provider_type1.default_interfaces
+      assert_instance_of Hash, provider_type1.default_interfaces
+      assert_not_empty provider_type1.default_interfaces
+      assert_equal def_attr, provider_type1.default_interfaces
+    end
+
+    test 'no default_volumes returns nil' do
+      provider_type.instance_variable_set(:@default_volumes, nil)
+      assert_nil provider_type.default_volumes
+    end
+
+    test 'returns default_volumes, if any' do
+      provider_type1 = ForemanOpentofu::ProviderType.new(provider_type.id)
+      def_attr = {
+        volume_type: 'something',
+      }
+
+      provider_type1.instance_variable_set(:@default_volumes, def_attr)
+      assert_not_nil provider_type1.default_volumes
+      assert_instance_of Hash, provider_type1.default_volumes
+      assert_not_empty provider_type1.default_volumes
+      assert_equal def_attr, provider_type1.default_volumes
+    end
+
     test 'available_images() raises Exception if attribute not available or supported' do
       provider_type.expects(:find_attr_by).returns nil
       assert_raise(NotImplementedError) do

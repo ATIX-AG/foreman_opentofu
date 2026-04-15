@@ -1,6 +1,6 @@
 module ForemanOpentofu
   class ProviderType
-    attr_reader :id, :name, :default_attributes
+    attr_reader :id, :name, :default_attributes, :default_interfaces, :default_volumes
     attr_accessor :capabilities, :disk_renderer, :nic_renderer
 
     def initialize(id)
