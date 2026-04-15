@@ -44,6 +44,11 @@ module ForemanOpentofu
       ::ComputeResourcesController.include ForemanOpentofu::Controller::Parameters::ComputeResource
       ::ComputeResourcesVmsController.include ForemanOpentofu::ComputeResourcesVmsController
       ::Host::Managed.include Orchestration::Tofu::Compute
+      ::Authorizer.prepend ForemanOpentofu::AuthorizerPowerOverride unless ::Authorizer < ForemanOpentofu::AuthorizerPowerOverride
+      ::HostsController.prepend ForemanOpentofu::HostsControllerPowerOverride unless ::HostsController < ForemanOpentofu::HostsControllerPowerOverride
+      if defined?(::Api::V2::HostsController) && !(::Api::V2::HostsController < ForemanOpentofu::Api::V2::HostsControllerPowerOverride)
+        ::Api::V2::HostsController.prepend ForemanOpentofu::Api::V2::HostsControllerPowerOverride
+      end
     rescue StandardError => e
       Rails.logger.warn "ForemanOpentofu: skipping engine hook (#{e})"
     end
