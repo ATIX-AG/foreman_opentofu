@@ -1,6 +1,5 @@
 <%
   volumes = Array.wrap(f.object.volumes)
-  volumes = [compute_resource.new_volume].compact if volumes.empty?
 %>
 <% volumes.each_with_index do |volume_obj, idx| %>
   <%= fields_for "#{f.object_name}[volumes][#{idx}]", volume_obj do |i| %>
