@@ -95,6 +95,7 @@ module ForemanOpentofu
 
       def build_disks
         disks = @cr_attrs['volumes'].presence || @cr_attrs['volumes_attributes'].presence || @compute_resource.default_volumes
+        return '' if disks.blank?
         disks = [disks] if disks.is_a?(Hash)
         disks.each_with_index.map do |disk, index|
           # drop removed disks; tofu will drop them automatically, if they are no longer defined

@@ -5,10 +5,6 @@ require "#{ForemanOpentofu::Engine.root}/app/services/foreman_opentofu/provider_
 ForemanOpentofu::ProviderTypeManager.register('hetzner') do
   @capabilities = [:image, :power_status_only]
 
-  def default_volumes
-    { name: 'volume1', size: 50, automount: true, format: 'ext4' }
-  end
-
   def provided_attributes
     {
       ip: :vm_ip_address,
