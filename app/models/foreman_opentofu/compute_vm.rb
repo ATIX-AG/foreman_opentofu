@@ -18,12 +18,12 @@ module ForemanOpentofu
     end
 
     def power
-      self['power'] || self['power_state']
+      self['status'] || self['power'] || self['power_state']
     end
 
     # TODO: add definitions for different power on/off values
     def ready?
-      power.to_s == 'on'
+      power.to_s == 'on' || power.to_s == 'running'
     end
 
     def name
