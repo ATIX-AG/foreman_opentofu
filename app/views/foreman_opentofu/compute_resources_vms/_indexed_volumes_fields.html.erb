@@ -10,9 +10,7 @@
   <%= render :partial => 'foreman_opentofu/compute_resources_vms/form/tofu/volumes_fields',
              :locals => { :f => f, :compute_resource => compute_resource, :new_host => new_vm, :new_vm => new_vm, :item_layout => item_layout } %>
 
-  <% if new_vm %>
     <%= add_child_link '+ ' + _("Add Volume"), :volumes, { :class => "info", :title => _('add new storage volume') } %>
-  <% end %>
 <% else %>
   <%= new_child_fields_template(f, :volumes, {
       :object  => volume,

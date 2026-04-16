@@ -30,6 +30,10 @@ module ForemanOpentofu
       self['name']
     end
 
+    def persisted?
+      self['identity'].present? || self['id'].present?
+    end
+
     def start
       @provider.start_vm(name)
     end
@@ -57,16 +61,45 @@ module ForemanOpentofu
       instance_eval(&block)
     end
 
+    def volumes
+      attribute_value('volumes') || []
+    end
+
     private
 
     def define_dynamic_readers!
-      @attributes.each_key do |key|
+      dynamic_attribute_keys.each do |key|
         next if respond_to?(key)
 
         define_singleton_method(key) do
-          @attributes[key]
+          attribute_value(key)
         end
       end
+    end
+
+    def dynamic_attribute_keys
+      @attributes.keys | provider_default_attributes.keys | provider_available_attribute_names
+    end
+
+    def provider_default_attributes
+      return {} unless @provider.respond_to?(:default_attributes)
+
+      @provider.default_attributes.to_h.deep_stringify_keys
+    end
+
+    def provider_available_attribute_names
+      return [] unless @provider.respond_to?(:available_attributes)
+
+      @provider.available_attributes.to_h.keys.map(&:to_s)
+    rescue StandardError
+      []
+    end
+
+    def attribute_value(key)
+      key = key.to_s
+      return @attributes[key] if @attributes.key?(key)
+
+      provider_default_attributes[key]
     end
 
     def deep_wrap(value)
@@ -96,12 +129,14 @@ module ForemanOpentofu
     end
 
     def respond_to_missing?(method_name, include_private = false)
-      @attributes.key?(method_name.to_s) || super
+      dynamic_attribute_keys.include?(method_name.to_s) || super
     end
 
     def method_missing(method_name, *args)
+      return super unless args.empty?
+
       key = method_name.to_s
-      return @attributes[key] if @attributes.key?(key)
+      return attribute_value(key) if dynamic_attribute_keys.include?(key)
 
       super
     end
