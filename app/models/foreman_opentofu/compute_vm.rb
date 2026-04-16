@@ -61,6 +61,10 @@ module ForemanOpentofu
       instance_eval(&block)
     end
 
+    def volumes
+      attribute_value('volumes') || []
+    end
+
     private
 
     def define_dynamic_readers!
