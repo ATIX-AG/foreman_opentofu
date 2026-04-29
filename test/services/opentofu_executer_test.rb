@@ -95,8 +95,8 @@ module ForemanOpentofu
         executor = OpentofuExecuter.new(@compute_resource, { 'resource' => { name: 'datasource_name1', options: {} } })
         executor.stubs(:provision_template).returns(@template)
 
-        @app_mock.expects(:output).with('resources')
-        executor.run_fetch
+        @app_mock.expects(:output).with('resources').returns('something')
+        assert_equal 'something', executor.run_fetch
       end
     end
   end

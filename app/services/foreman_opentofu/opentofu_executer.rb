@@ -57,7 +57,7 @@ module ForemanOpentofu
     def run_new
       run('new') do |tofu|
         tofu.plan
-        tofu.show_plan
+        return tofu.show_plan
       end
     end
 
@@ -87,7 +87,7 @@ module ForemanOpentofu
     def run_fetch
       run do |tofu|
         tofu.apply
-        tofu.output('resources')
+        return tofu.output('resources')
       end
     end
 
