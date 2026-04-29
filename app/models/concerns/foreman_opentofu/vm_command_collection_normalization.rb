@@ -18,5 +18,30 @@ module ForemanOpentofu
         entry.respond_to?(:deep_symbolize_keys) ? entry.deep_symbolize_keys : entry
       end
     end
+
+    def prefill_mandatory_attributes(args)
+      # FIXME: add volume/nic attributes
+      res = {}
+      mandatory_attrs = tofu_provider.attributes('vm').select { |attr| attr['mandatory'] && !args.key?(attr['name']) }
+      mandatory_attrs.each do |attribute|
+        name = attribute['name'].to_sym
+        res[name] = determine_default(attribute) || ''
+      end
+      res
+    end
+
+    def determine_default(attribute)
+      return attribute['default'] if attribute.key? 'default'
+
+      options = attribute['options']
+      case options
+      when Array then options.first
+      when Hash
+        if options.dig('data_source', 'name')
+          dyn_res = fetch_resource(options.dig('data_source', 'name'), options)
+          dyn_res&.first&.fetch('id')
+        end
+      end
+    end
   end
 end

@@ -23,59 +23,72 @@ module ForemanOpentofu
       end
     end
 
-    test '#new_vm returns OpenStruct with attributes' do
-      @executor.stubs(:run_new).returns(
-        'resource_changes' => [
-          { 'change' => { 'after' => { 'name' => 'vm1' } } },
-        ]
-      )
+    context '#new_vm' do
+      setup do
+        @executor.stubs(:run_fetch)
+        @executor.stubs(:run_new).returns(
+          'resource_changes' => [
+            { 'change' => { 'after' => { 'name' => 'vm1' } } },
+          ]
+        )
+      end
 
-      vm = @nutanix_cr.new_vm('name' => 'vm1')
+      test 'returns OpenStruct with attributes' do
+        vm = @nutanix_cr.new_vm('name' => 'vm1')
 
-      assert_instance_of OpenStruct, vm
-      assert_equal 'vm1', vm.name
+        assert_instance_of OpenStruct, vm
+        assert_equal 'vm1', vm.name
+      end
+
+      test 'prefills mandatory attributes' do
+        @nutanix_cr.stubs(:fetch_resource).returns([{ 'id' => 'some_uuid' }])
+        @nutanix_cr.expects(:client).with({ cluster_uuid: 'some_uuid', name: 'vm1' }).returns(@executor)
+        @nutanix_cr.new_vm('name' => 'vm1')
+      end
     end
 
-    test '#create_vm returns ComputeVM' do
-      @executor.stubs(:run_create).returns({ 'id' => 'vm1' })
+    context '#create_vm' do
+      test 'returns ComputeVM' do
+        @executor.stubs(:run_create).returns({ 'id' => 'vm1' })
 
-      vm = @nutanix_cr.create_vm('name' => 'vm1')
+        vm = @nutanix_cr.create_vm('name' => 'vm1')
 
-      assert_instance_of ComputeVM, vm
-    end
+        assert_instance_of ComputeVM, vm
+      end
 
-    test '#create_vm normalizes indexed volume and interface hashes before client call' do
-      captured_args = nil
-      @nutanix_cr.stubs(:client).with do |args|
-        captured_args = args
-        true
-      end.returns(@executor)
-      @executor.stubs(:run_create).returns({ 'id' => 'vm1' })
+      test 'normalizes indexed volume and interface hashes before client call' do
+        captured_args = nil
+        @nutanix_cr.stubs(:client).with do |args|
+          captured_args = args
+          true
+        end.returns(@executor)
+        @executor.stubs(:run_create).returns({ 'id' => 'vm1' })
 
-      @nutanix_cr.create_vm(
-        'name' => 'vm1',
-        'volumes' => {
-          '0' => { 'size' => '13', 'label' => 'disk0' },
-        },
-        'interfaces_attributes' => {
-          '0' => { 'network_id' => 'net-1', 'adapter_type' => 'vmxnet3' },
-        }
-      )
+        @nutanix_cr.create_vm(
+          'name' => 'vm1',
+          'volumes' => {
+            '0' => { 'size' => '13', 'label' => 'disk0' },
+          },
+          'interfaces_attributes' => {
+            '0' => { 'network_id' => 'net-1', 'adapter_type' => 'vmxnet3' },
+          }
+        )
 
-      assert_kind_of Array, captured_args[:volumes]
-      assert_equal '13', captured_args[:volumes][0][:size]
-      assert_equal 'disk0', captured_args[:volumes][0][:label]
+        assert_kind_of Array, captured_args[:volumes]
+        assert_equal '13', captured_args[:volumes][0][:size]
+        assert_equal 'disk0', captured_args[:volumes][0][:label]
 
-      assert_kind_of Array, captured_args[:interfaces]
-      assert_equal 'net-1', captured_args[:interfaces][0][:network_id]
-      assert_equal 'vmxnet3', captured_args[:interfaces][0][:adapter_type]
-    end
+        assert_kind_of Array, captured_args[:interfaces]
+        assert_equal 'net-1', captured_args[:interfaces][0][:network_id]
+        assert_equal 'vmxnet3', captured_args[:interfaces][0][:adapter_type]
+      end
 
-    test '#create_vm wraps exceptions' do
-      @executor.stubs(:run_create).raises(StandardError.new('boom'))
+      test 'wraps exceptions' do
+        @executor.stubs(:run_create).raises(StandardError.new('boom'))
 
-      assert_raises(Foreman::WrappedException) do
-        @nutanix_cr.create_vm('name' => 'vm1')
+        assert_raises(Foreman::WrappedException) do
+          @nutanix_cr.create_vm('name' => 'vm1')
+        end
       end
     end
 
