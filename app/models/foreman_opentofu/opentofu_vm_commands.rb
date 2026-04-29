@@ -14,6 +14,7 @@ module ForemanOpentofu
       vm_command_errors('new vm') do
         args = default_attributes.merge(args).to_h.symbolize_keys
         normalize_vm_args_collections!(args)
+        args = prefill_mandatory_attributes(args).merge(args)
         executor = client(args)
         data = executor.run_new
         attrs = data['resource_changes'].first['change']['after'] || {}

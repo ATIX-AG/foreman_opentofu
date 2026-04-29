@@ -98,6 +98,7 @@ A config-parameter has the following values:
 * `help`: Tooltip describing what that value does and what values are allowed
 * `mandatory`: `true`/`false` defines if omitting the value triggers an error
 * `options`: array of strings representing the possible values
+* `default`: default-value should be specified if parameter is mandatory and options is empty
 * `group`: define where the value should be configured
    * `vm`: ones per Host in the 'Virtual Machine' tab,
    * `disk`: for each defined disk/volume in the 'Virtual Machine' tab
