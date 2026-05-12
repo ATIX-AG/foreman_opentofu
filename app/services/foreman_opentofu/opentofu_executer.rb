@@ -9,6 +9,7 @@ module ForemanOpentofu
       @cr_attrs = args.to_h.with_indifferent_access
       @resource = @cr_attrs['resource']
       @host_name = @cr_attrs['name'] || 'test'
+      @key_pair = @compute_resource.key_pair
     end
 
     def run(mode = '')
@@ -122,6 +123,8 @@ module ForemanOpentofu
         host_name: @host_name,
         resource: @resource,
         dry_run: dry_run(mode),
+        keygen: (mode == 'keygen'),
+        ssh_key: @key_pair,
         user_data_filename: @user_data_filename,
       }
       scope = Foreman::Renderer.get_scope(source: template, variables: variables)
