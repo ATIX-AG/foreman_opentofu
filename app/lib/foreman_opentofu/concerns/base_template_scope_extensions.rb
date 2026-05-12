@@ -48,9 +48,12 @@ module ForemanOpentofu
         block << block_to_hcl(%w[output resources])
         block << '{' << "\n"
         block << "  value = [ for e in data.#{resource[:name]}.all.#{resource.dig(:options, 'output_path_postfix')}: {\n"
-        block << "    id = e.#{resource.dig(:options, 'entity', 'id') || 'id'}\n"
-        block << "    name = e.#{resource.dig(:options, 'entity', 'name') || 'name'}\n"
-        # block << 'obj = e'
+        params = resource.dig(:options, 'entity') || {}
+        params[:id] = 'id' unless params.key? :id
+        params[:name] = 'name' unless params.key? :name
+        params.each do |key, value|
+          block << "    #{key} = e.#{value}\n"
+        end
         block << '  } ]' << "\n"
         block << '}' << "\n"
       end

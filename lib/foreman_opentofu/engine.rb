@@ -32,6 +32,11 @@ module ForemanOpentofu
                 default: 600,
                 full_name: N_('TfState Token Timeout'),
                 description: N_('Number of seconds a run of Opentofu command is allowed to report tf-state back to the plugin.')
+              setting 'tofu_ssh_key_bits',
+                type: :integer,
+                default: 4096,
+                full_name: N_('SSH-Key Length'),
+                description: N_('Number of Bits for the SSH-Key required to provision hosts on image-based providers.')
             end
           end
         end
