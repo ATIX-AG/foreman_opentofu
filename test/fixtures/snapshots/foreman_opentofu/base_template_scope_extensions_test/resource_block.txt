@@ -1,0 +1,8 @@
+data "resource_name" "all" {}
+output "resources" {
+  value = [ for e in data.resource_name.all.stuff: {
+    id = e.identifier
+    additional_key = e.key1
+    name = e.name
+  } ]
+}

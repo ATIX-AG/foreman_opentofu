@@ -25,12 +25,19 @@ module ForemanOpentofu
           password: @compute_resource.password,
           endpoint: @compute_resource.url,
         })
-        @use_backend = %w[create destroy output].include?(mode)
+        @use_backend = %w[create destroy output keygen].include?(mode)
         @token = create_token(@host_name) if @use_backend
         tofu.main_configuration = render_template(mode)
         tofu.init
         yield(tofu)
       end
+    end
+
+    def run_key(key_pair, &block)
+      @host_name = key_pair.name
+      @key_pair = key_pair
+      run('keygen', &block)
+      @compute_resource.reset_cached_ssh_keys
     end
 
     # creates a new authentication token for the TfState API-controller
@@ -72,6 +79,18 @@ module ForemanOpentofu
         ForemanOpentofu::TfState.find_by(name: @cr_attrs['name'])&.update(uuid: attrs['identity'])
         attrs
       end
+    end
+
+    def key_pairs
+      KeyPairs.new self, @compute_resource.available_ssh_keys
+    end
+
+    def run_create_key(key_pair)
+      run_key(key_pair, &:apply)
+    end
+
+    def run_destroy_key(key_pair)
+      run_key(key_pair, &:destroy)
     end
 
     def run_output

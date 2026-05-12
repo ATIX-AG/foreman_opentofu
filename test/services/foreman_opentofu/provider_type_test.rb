@@ -189,6 +189,43 @@ module ForemanOpentofu
       assert_equal opts, provider_type.available_images(compute_resource)
     end
 
+    test 'available_ssh_keys() returns empty array if attribute not available or supported' do
+      provider_type.expects(:find_attr_by).returns nil
+      assert_empty provider_type.available_ssh_keys(compute_resource)
+
+      provider_type.expects(:find_attr_by).returns({ 'options' => nil })
+      assert_empty provider_type.available_ssh_keys(compute_resource)
+
+      provider_type.expects(:find_attr_by).returns({ 'options' => 1 })
+      assert_raise(RuntimeError) do
+        assert_empty provider_type.available_ssh_keys(compute_resource)
+      end
+
+      provider_type.expects(:find_attr_by).returns({ 'options' => %w[opt1 opt2] })
+      assert_raise(RuntimeError) do
+        assert_empty provider_type.available_ssh_keys(compute_resource)
+      end
+    end
+
+    test 'available_ssh_keys() requests resource if dynamic value' do
+      opts = { 'data_source' => { 'name' => 'test' } }
+      provider_type.expects(:find_attr_by).returns({ 'options' => opts })
+      compute_resource.expects(:available_resource).with('test', opts)
+      provider_type.available_ssh_keys(compute_resource)
+    end
+
+    test 'reset_cached_ssh_keys()' do
+      provider_type.expects(:find_attr_by).returns(nil)
+      assert_empty provider_type.reset_cached_ssh_keys compute_resource
+
+      provider_type.expects(:find_attr_by).returns({ 'options' => 1 })
+      assert_nil provider_type.reset_cached_ssh_keys compute_resource
+
+      provider_type.expects(:find_attr_by).returns({ 'options' => {} })
+      compute_resource.expects(:cache_delete)
+      provider_type.reset_cached_ssh_keys compute_resource
+    end
+
     test 'provided_attributes()' do
       assert_instance_of Hash, provider_type.provided_attributes
     end

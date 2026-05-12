@@ -19,6 +19,7 @@ module ForemanOpentofu
   class Tofu < ComputeResource
     include OpentofuVMCommands
     include ComputeResourceCaching
+    include KeyPairComputeResource
     validates :provider, presence: true, inclusion: { in: %w[Tofu] }
     validates :url, presence: true
     validates :user, presence: true
@@ -27,11 +28,26 @@ module ForemanOpentofu
     # alias_attribute :username, :user
     # alias_attribute :endpoint, :url
 
-    delegate :available_attributes, :capabilities, :render_disk, :render_nic, to: :tofu_provider
+    delegate :available_attributes, :render_disk, :render_nic, to: :tofu_provider
+
+    def capabilities
+      # do not delegate to avoid problems with (Foreman::)KeyPairCapabilities concern
+      # Attention: KeyPairCapabilities concern adds 'key_pair'-capabilities to all OpenTofu compute resources!
+      tofu_provider.capabilities || []
+    end
 
     def available_images
       # make sure available_images can use this CR, e.g. for requesting data_source
       tofu_provider.available_images(self)
+    end
+
+    def available_ssh_keys
+      # make sure available_ssh_keys can use this CR, e.g. for requesting data_source
+      tofu_provider.available_ssh_keys(self)
+    end
+
+    def reset_cached_ssh_keys
+      tofu_provider.reset_cached_ssh_keys(self)
     end
 
     def provided_attributes
@@ -117,6 +133,10 @@ module ForemanOpentofu
       end
     end
 
+    def cache_delete(resource_name)
+      cache.delete("#{name}_#{resource_name}") if resource_name.present?
+    end
+
     def available_resource_ui_select(resource_name, options = {})
       available_resource(resource_name, options)&.map { |obj| [obj['name'], obj['id']] }
     end
@@ -141,6 +161,20 @@ module ForemanOpentofu
         end
       ]
       vm_attrs
+    end
+
+    ### overwrite from KeyPairComputeResource
+    def setup_key_pair
+      return unless tofu_provider.capabilities.include? :key_pair
+
+      # Need to create KeyPair in the Backend, so the backend has the public-key!
+      key = client.key_pairs.create name: "foreman-#{id}#{Foreman.uuid}"
+      # ...because Foreman does not save the public-key!
+      KeyPair.create! name: key.name, compute_resource_id: id, secret: key.private_key, public: key.public_key
+    rescue StandardError => e
+      Foreman::Logging.exception('Failed to generate key pair', e)
+      destroy_key_pair
+      raise
     end
   end
 end

@@ -31,6 +31,28 @@ module ForemanOpentofu
       end
     end
 
+    # if necessary, select-parameter named 'available_ssh_keys' must be specified!
+    def available_ssh_keys(compute_resource)
+      attribute = find_attr_by('name', 'available_ssh_keys')
+      return [] if attribute.nil? || attribute['options'].nil?
+
+      query_opts = attribute['options']
+      case query_opts
+      when Hash then compute_resource.available_resource(query_opts.dig('data_source', 'name'), query_opts)
+      else raise 'available_ssh_keys in ProviderType config is of unknown type.'
+      end
+    end
+
+    def reset_cached_ssh_keys(compute_resource)
+      attribute = find_attr_by('name', 'available_ssh_keys')
+      return if attribute.nil? || attribute['options'].nil?
+
+      query_opts = attribute['options']
+      return unless query_opts.is_a? Hash
+
+      compute_resource.cache_delete(query_opts.dig('data_source', 'name'))
+    end
+
     # returns hash of available-attributes with attr-name as key
     def available_attributes(group = nil)
       raise "No available-attributes found for #{name}" unless attributes?

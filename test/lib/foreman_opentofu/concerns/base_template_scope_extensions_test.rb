@@ -167,5 +167,28 @@ module ForemanOpentofu
       assert_includes block, 'network_id = 123'
       assert_not_includes block, 'network_id = 456'
     end
+
+    test 'resource_block' do
+      source = ::Foreman::Renderer::Source::String.new(
+        name: 'Parameter',
+        content: '<%= resource_block(@resource) %>'
+      )
+      scope = ::Foreman::Renderer.get_scope(variables: {
+        resource: {
+          name: 'resource_name',
+          options: {
+            output_path_postfix: 'stuff',
+            entity: {
+              id: 'identifier',
+              additional_key: 'key1',
+            },
+          },
+        }.with_indifferent_access,
+      })
+      block = ::Foreman::Renderer.render(source, scope)
+
+      assert_not_empty block
+      assert_snapshot self, 'resource_block', block
+    end
   end
 end

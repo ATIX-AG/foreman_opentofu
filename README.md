@@ -171,6 +171,9 @@ output "resources" {
 
 Some config parameter names have special meanings.
 For instance, Image-based Deployment requires binding images available on the backend-service with Operating Systems configured in Foreman.
+
+###### available\_images
+
 To enable Foreman OpenTofu to display the available images, a `select`-parameter with the name `available_images` must be specified.
 It is recommended to tie this to a data-source available in the OpenTofu provider.
 
@@ -183,6 +186,26 @@ It is recommended to tie this to a data-source available in the OpenTofu provide
       "arguments": { "with_architecture": ["x86"] }
     },
     "output_path_postfix": "images"
+  }
+}
+```
+
+###### available\_ssh\_keys
+
+Cloud-based Providers usually require an SSH key pair to configure image-based hosts.
+This dynamic data-source should provide a list of SSH keys known to the cloud-provider.
+
+```ruby
+{
+  name: 'available_ssh_keys', type: 'select',
+  label: 'SSH-Deployment-Keys', options: {
+    data_source: {
+      name: 'hcloud_ssh_keys',
+    },
+    entity: {
+      fingerprint: 'fingerprint',
+    },
+    output_path_postfix: 'ssh_keys',
   }
 }
 ```

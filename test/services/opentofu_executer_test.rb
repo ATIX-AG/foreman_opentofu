@@ -24,6 +24,8 @@ module ForemanOpentofu
       @app_mock.stubs(:output).with('vm_attrs').returns('identity' => 'uuid-1')
     end
 
+    let(:key_pair) { FactoryBot.create(:key_pair) }
+
     # Could not add this stub in setup as it would then try to automatically run
     # remove_const to remove the stub_const afterwards and this method does not exist
     def stub_opentofu_tmp_dir(&block)
@@ -83,6 +85,37 @@ module ForemanOpentofu
       end
     end
 
+    test '#run_key resets ssh_keys cache' do
+      @compute_resource.expects(:reset_cached_ssh_keys)
+      stub_opentofu_tmp_dir do
+        @executor.run_key key_pair do |tofu|
+        end
+      end
+    end
+
+    test '#run_key calls #run' do
+      do_something = lambda do |tofu|
+        assert_equal @app_mock, tofu
+      end
+
+      stub_opentofu_tmp_dir do
+        @executor.run_key key_pair, &do_something
+      end
+
+      assert_equal key_pair.name, @executor.instance_variable_get('@host_name')
+      assert @executor.instance_variable_get('@use_backend')
+    end
+
+    test '#run_create_key' do
+      @executor.expects(:run_key)
+      @executor.run_create_key(key_pair)
+    end
+
+    test '#run_destroy_key' do
+      @executor.expects(:run_key)
+      @executor.run_destroy_key(key_pair)
+    end
+
     test '#render_template raises exception if nil returned' do
       stub_opentofu_tmp_dir do
         Foreman::Renderer::UnsafeModeRenderer.stubs(:render).returns(nil)
@@ -98,6 +131,15 @@ module ForemanOpentofu
         @app_mock.expects(:output).with('resources').returns('something')
         assert_equal 'something', executor.run_fetch
       end
+    end
+
+    test '#key_pairs returns "Array"' do
+      assert_kind_of Array, @executor.key_pairs
+    end
+
+    test '#key_pairs reads available ssh-keys' do
+      @compute_resource.expects(:available_ssh_keys)
+      @executor.key_pairs
     end
   end
 end

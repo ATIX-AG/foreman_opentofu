@@ -11,6 +11,7 @@ class TofuTest < ActiveSupport::TestCase
   should delegate_method(:available_attributes).to(:tofu_provider)
   should delegate_method(:provided_attributes).to(:tofu_provider)
   should delegate_method(:available_images).to(:tofu_provider)
+  should delegate_method(:available_ssh_keys).to(:tofu_provider)
   should delegate_method(:capabilities).to(:tofu_provider)
 
   test 'validates provider is Tofu' do
@@ -19,6 +20,11 @@ class TofuTest < ActiveSupport::TestCase
 
     subject.provider = 'Tofu'
     assert subject.valid?
+  end
+
+  test 'capabilities returns array if undefined' do
+    subject.tofu_provider.expects(:capabilities).returns(nil)
+    assert_kind_of Array, subject.capabilities
   end
 
   test 'responds to opentofu_template' do
@@ -64,5 +70,69 @@ class TofuTest < ActiveSupport::TestCase
     subject.tofu_provider.expects(:vm_ready).with(vm)
     assert_respond_to subject.tofu_provider, :vm_ready
     subject.vm_ready(vm)
+  end
+
+  test 'skips KeyPair create' do
+    client = mock
+    client.expects(:key_pairs).never
+
+    ForemanOpentofu::Tofu.any_instance.stubs(:client).returns(client)
+
+    FactoryBot.create :opentofu_nutanix_cr
+  end
+
+  test 'creates KeyPair if capability set' do
+    client = mock
+    key_pairs = mock
+    client.expects(:key_pairs).returns(key_pairs)
+    key_pairs.expects(:create).returns(OpenStruct.new({
+      name: 'something',
+      private_key: 'private_key',
+      public_key: 'public_key',
+    }))
+    ForemanOpentofu::Tofu.any_instance.stubs(:client).returns(client)
+
+    FactoryBot.create :opentofu_hetzner_cr
+
+    assert_not_nil KeyPair.find_by(name: 'something')
+  end
+
+  test 'can recreate KeyPair' do
+    ForemanOpentofu::Tofu.any_instance.stubs(:reset_cached_ssh_keys)
+    ForemanOpentofu::ProviderType.any_instance.stubs(:available_ssh_keys).returns([])
+    ForemanOpentofu::OpentofuExecuter.any_instance.expects(:run).times(3)
+    ForemanOpentofu::TofuKeyPair.any_instance.stubs(:private_key).returns('secret')
+    ForemanOpentofu::TofuKeyPair.any_instance.expects(:generate).twice
+    cr = FactoryBot.create :opentofu_hetzner_cr
+    cr.reload
+
+    cr.recreate
+  end
+
+  test 'can reset ssh-key cache' do
+    ForemanOpentofu::Tofu.any_instance.stubs(:setup_key_pair)
+    cr = FactoryBot.create :opentofu_hetzner_cr
+    cr.tofu_provider.expects(:reset_cached_ssh_keys)
+    cr.reset_cached_ssh_keys
+  end
+
+  test 'cache_delete() does nothing' do
+    ForemanOpentofu::Tofu.any_instance.stubs(:setup_key_pair)
+    cr = FactoryBot.create :opentofu_hetzner_cr
+    Rails.cache.expects(:delete).never
+    cr.cache_delete('')
+  end
+
+  test 'cache_delete(something) cleans cache item' do
+    ForemanOpentofu::Tofu.any_instance.stubs(:setup_key_pair)
+    cr = FactoryBot.create :opentofu_hetzner_cr
+    Rails.cache.expects(:delete)
+    mocked = Minitest::Mock.new
+    mocked.expect :delete, nil do |cache_key|
+      assert "#{cr.name}_something", cache_key
+    end
+    Rails.cache.stub(:delete, mocked) do
+      cr.cache_delete('something')
+    end
   end
 end
