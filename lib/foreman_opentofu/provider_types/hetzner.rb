@@ -3,7 +3,7 @@ require "#{ForemanOpentofu::Engine.root}/app/services/foreman_opentofu/provider_
 require "#{ForemanOpentofu::Engine.root}/app/services/foreman_opentofu/provider_type"
 
 ForemanOpentofu::ProviderTypeManager.register('hetzner') do
-  @capabilities = [:image, :power_status_only]
+  @capabilities = [:image, :key_pair, :power_status_only]
 
   def provided_attributes
     {
@@ -94,6 +94,16 @@ ForemanOpentofu::ProviderTypeManager.register('hetzner') do
           name: 'description',
         },
         output_path_postfix: 'images',
+      } },
+    { name: 'available_ssh_keys', type: 'select',
+      label: 'SSH-Deployment-Keys', options: {
+        data_source: {
+          name: 'hcloud_ssh_keys',
+        },
+        entity: {
+          fingerprint: 'fingerprint',
+        },
+        output_path_postfix: 'ssh_keys',
       } },
   ]
 

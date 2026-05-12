@@ -15,7 +15,21 @@ provider "hcloud" {
 <% if @resource %>
 <%= resource_block(@resource) %>
 
+<% elsif @keygen %>
+<%- if @ssh_key.present? %>
+resource "hcloud_ssh_key" "deploy_key" {
+  name       = "<%= @ssh_key.name %>"
+  public_key = "<%= @ssh_key.public_key %>"
+}
+<%- end %>
+
 <% elsif !@dry_run %>
+<%- if @ssh_key.present? %>
+data "hcloud_ssh_key" "deploy_key" {
+  name       = "<%= @ssh_key.name %>"
+}
+<%- end %>
+
 # Create a new server running debian
 resource "hcloud_server" "node1" {
   name        = "<%= @host_name %>"
@@ -24,14 +38,18 @@ resource "hcloud_server" "node1" {
 
   <%= vm_attributes(['name', 'image']) %>
 
-  <%- if @cr_attrs['image_id'].present? %>
-    image = <%= @cr_attrs['image_id'] %>
+<%- if @cr_attrs['image_id'].present? %>
+  image = <%= @cr_attrs['image_id'] %>
   <%- if @user_data_filename.present? %>
-    user_data = "${file("<%= @user_data_filename %>")}"
+  user_data = "${file("<%= @user_data_filename %>")}"
   <%- elsif @cr_attrs['user_data'].present? %>
-    user_data = <%= @cr_attrs['user_data'] %>
+  user_data = <%= @cr_attrs['user_data'] %>
+  <%- elsif @ssh_key.present? %>
+  ssh_keys = [
+    data.hcloud_ssh_key.deploy_key.id
+  ]
   <%- end %>
-  <%- end %>
+<%- end %>
 
   <%= build_nics %>
 
