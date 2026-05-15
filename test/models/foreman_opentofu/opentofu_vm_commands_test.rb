@@ -127,17 +127,20 @@ module ForemanOpentofu
 
     test '#save_vm updates existing vm and returns ComputeVM without creating new TfState' do
       tf_state = FactoryBot.create(:tf_state, uuid: 'uuid1', name: 'existing-vm')
+      @nutanix_cr.stubs(:vm_compute_attributes_for).with('uuid1').returns({ 'cpu' => 2 })
 
       @executor.stubs(:run_create).returns({ 'id' => tf_state.uuid })
 
       assert_no_difference('ForemanOpentofu::TfState.count') do
-        vm = @nutanix_cr.save_vm('uuid1', [{ 'cpu' => 4 }])
+        vm = @nutanix_cr.save_vm('uuid1', { 'cpu' => 4 })
         assert_instance_of ComputeVM, vm
       end
     end
 
     test '#save_vm updates vm with no attributes without creating new TfState' do
       tf_state = FactoryBot.create(:tf_state, uuid: 'uuid1', name: 'existing-vm')
+      @nutanix_cr.stubs(:vm_compute_attributes_for).with('uuid1').returns({ 'cpu' => 2 })
+      @nutanix_cr.expects(:client).with(has_entries('name' => 'existing-vm', :cpu => 2)).returns(@executor)
 
       @executor.stubs(:run_create).returns({ 'id' => tf_state.uuid })
 
@@ -149,20 +152,23 @@ module ForemanOpentofu
 
     test '#save_vm wraps exceptions and does not create new TfState' do
       FactoryBot.create(:tf_state, uuid: 'uuid1', name: 'existing-vm')
+      @nutanix_cr.stubs(:vm_compute_attributes_for).with('uuid1').returns({ 'cpu' => 2 })
 
       @executor.stubs(:run_create).raises(StandardError.new('update failed'))
 
       assert_no_difference('ForemanOpentofu::TfState.count') do
         assert_raises(Foreman::WrappedException) do
-          @nutanix_cr.save_vm('uuid1', [{ 'cpu' => 8 }])
+          @nutanix_cr.save_vm('uuid1', { 'cpu' => 8 })
         end
       end
     end
 
     test '#save_vm fails when TfState is missing' do
+      @nutanix_cr.stubs(:vm_compute_attributes_for).with('missing').returns({})
+
       assert_no_difference('ForemanOpentofu::TfState.count') do
         ex = assert_raises(StandardError) do
-          @nutanix_cr.save_vm('missing', [{ 'cpu' => 4 }])
+          @nutanix_cr.save_vm('missing', { 'cpu' => 4 })
         end
         assert_match(/VM with UUID missing does not exist/, ex.message)
       end

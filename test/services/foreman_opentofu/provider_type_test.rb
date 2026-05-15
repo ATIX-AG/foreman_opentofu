@@ -198,12 +198,12 @@ module ForemanOpentofu
 
       rendered = hetzner.render_disk({ size: 50, format: 'ext4', automount: true }, nil, 0)
 
-      assert_equal 'hcloud_volume', rendered.dig(:resource, :type)
-      assert_equal 'volume1', rendered.dig(:resource, :name)
-      assert_equal 50, rendered.dig(:resource, :content, :size)
-      assert_equal :'hcloud_server.node1.id', rendered.dig(:resource, :content, :server_id)
-      assert rendered.dig(:resource, :content, :automount)
-      assert_equal 'ext4', rendered.dig(:resource, :content, :format)
+      assert_instance_of String, rendered
+      assert_includes rendered, 'resource "hcloud_volume" "volumes"'
+      assert_includes rendered, 'for_each  = { for k, d in local.disks'
+      assert_includes rendered, 'server_id = hcloud_server.node1.id'
+      assert_includes rendered, 'automount = try(each.value.automount, null)'
+      assert_includes rendered, 'format    = try(each.value.format, null)'
     end
   end
 end

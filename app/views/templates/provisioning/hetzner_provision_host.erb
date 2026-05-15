@@ -6,7 +6,7 @@ description: |
   Hetzner OpenTofu script to create vm resource
 -%>
 
-<%= terraform_block({ hcloud: { source: 'hetznercloud/hcloud', version: '~> 1.45' } }) %>
+<%= terraform_block({ hcloud: { source: 'hetznercloud/hcloud', version: '>= 1.60' } }) %>
 
 provider "hcloud" {
   token = var.password
@@ -25,13 +25,15 @@ resource "hcloud_server" "node1" {
   <%= vm_attributes(['name', 'image']) %>
 
   <%- if @cr_attrs['image_id'].present? %>
-  image = <%= @cr_attrs['image_id'] %>
+    image = <%= @cr_attrs['image_id'] %>
   <%- if @user_data_filename.present? %>
     user_data = "${file("<%= @user_data_filename %>")}"
+  <%- elsif @cr_attrs['user_data'].present? %>
+    user_data = <%= @cr_attrs['user_data'] %>
   <%- end %>
   <%- end %>
 
-  <%= nic_attributes('network') %>
+  <%= build_nics %>
 
   public_net {
     ipv4_enabled = true
@@ -47,6 +49,15 @@ output "vm_attrs" {
       vm_ip_address = hcloud_server.node1.ipv4_address
       vm_ip6_address = hcloud_server.node1.ipv6_address
       vm = hcloud_server.node1
+      volumes_attributes = try({
+        for v in values(hcloud_volume.volumes) : tostring(v.id) => {
+          id = v.id
+          name = v.name
+          size = v.size
+          automount = try(v.automount, null)
+          format = try(v.format, null)
+        }
+      }, {})
 }
 }
 

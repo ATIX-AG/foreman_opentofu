@@ -1,8 +1,16 @@
 <%
-  volumes = Array.wrap(f.object.volumes)
+  volumes = f.object.volumes_attributes
+  volumes =
+    if volumes.is_a?(Hash)
+      volumes.sort_by { |key, _| key.to_s.sub('new_', '').to_i }
+    else
+      Array.wrap(volumes).each_with_index.map { |value, idx| [idx.to_s, value] }
+    end
 %>
-<% volumes.each_with_index do |volume_obj, idx| %>
-  <%= fields_for "#{f.object_name}[volumes][#{idx}]", volume_obj do |i| %>
+<% volumes.each do |volume_key, volume_obj| %>
+  <% volume_obj = compute_resource.new_volume(volume_obj.to_h) if volume_obj.is_a?(Hash) %>
+  <%= fields_for "#{f.object_name}[volumes_attributes][#{volume_key}]", volume_obj do |i| %>
+    <%= i.hidden_field :id if volume_obj.respond_to?(:id) && volume_obj.id.present? %>
     <%= render :partial => provider_partial(compute_resource, 'volume'),
                :locals => { :f => i, :compute_resource => compute_resource, :new_host => new_host, :new_vm => new_vm, :remove_title => _('remove storage volume') },
                :layout => "compute_resources_vms/form/#{item_layout}_layout" %>

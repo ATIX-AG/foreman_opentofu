@@ -120,5 +120,27 @@ module ForemanOpentofu
     def available_resource_ui_select(resource_name, options = {})
       available_resource(resource_name, options)&.map { |obj| [obj['name'], obj['id']] }
     end
+
+    def vm_compute_attributes(vm)
+      vm_attrs = super
+      tofu_provider.normalize_interfaces(vm_attrs)
+    end
+
+    private
+
+    def set_vm_volumes_attributes(vm, vm_attrs)
+      volumes = if vm.respond_to?(:volumes_attributes)
+                  vm.volumes_attributes.values
+                else
+                  []
+                end
+      vm_attrs[:volumes_attributes] = Hash[
+        volumes.each_with_index.map do |volume, idx|
+          attrs = volume.respond_to?(:attributes) ? volume.attributes : volume
+          [idx.to_s, attrs]
+        end
+      ]
+      vm_attrs
+    end
   end
 end
