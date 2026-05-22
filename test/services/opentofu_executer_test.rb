@@ -42,6 +42,75 @@ module ForemanOpentofu
       end
     end
 
+    test '#run_create with_raise_if_recreate raises' do
+      stub_opentofu_tmp_dir do
+        @app_mock.expects(:show_plan).returns(
+          {
+            'resource_changes' => [
+              {
+                'change' => { 'actions' => %w[create delete] },
+                'type' => 'anything',
+                'address' => 'recreated',
+              },
+              {
+                'change' => { 'actions' => ['update'] },
+                'type' => 'something',
+                'address' => 'updated',
+              },
+              {
+                'type' => 'nothing',
+                'address' => 'unchanged',
+              },
+              {},
+            ],
+          }
+        )
+        @compute_resource.tofu_provider.expects(:filter_resource_changes).with(
+          [
+            {
+              'change' => { 'actions' => %w[create delete] },
+              'type' => 'anything',
+              'address' => 'recreated',
+            },
+          ]
+        ).returns(
+          [
+            {
+              'change' => { 'actions' => %w[create delete] },
+              'type' => 'anything',
+              'address' => 'recreated',
+            },
+          ]
+        )
+
+        assert_raises(RuntimeError) { @executor.run_create(raise_if_recreate: true) }
+      end
+    end
+
+    test '#run_create with_raise_if_recreate passes' do
+      stub_opentofu_tmp_dir do
+        @app_mock.expects(:show_plan).returns(
+          {
+            'resource_changes' => [
+              {
+                'change' => { 'actions' => ['update'] },
+                'type' => 'something',
+                'address' => 'updated',
+              },
+              {
+                'type' => 'nothing',
+                'address' => 'unchanged',
+              },
+              {},
+            ],
+          }
+        )
+        @compute_resource.tofu_provider.expects(:filter_resource_changes).with([]).returns([])
+
+        assert_not_nil @executor.run_create(raise_if_recreate: true)
+      end
+    end
+
     test '#run output returns vm_attrs' do
       stub_opentofu_tmp_dir do
         result = @executor.run_output

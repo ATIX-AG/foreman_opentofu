@@ -59,7 +59,7 @@ module ForemanOpentofu
         new_attrs = attrs.to_h.deep_stringify_keys
         merged_attrs = old_attrs.merge(new_attrs).deep_symbolize_keys
         normalize_vm_args_collections!(merged_attrs)
-        data = client({ 'name' => tf_state.name }.merge(merged_attrs)).run_create
+        data = client({ 'name' => tf_state.name }.merge(merged_attrs)).run_create(raise_if_recreate: true)
         ComputeVM.new(self, data)
       end
     end

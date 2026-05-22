@@ -236,6 +236,20 @@ This dynamic data-source should provide a list of SSH keys known to the cloud-pr
 }
 ```
 
+#### Protection against Accidental Resource Recreation
+
+Depending on the settings that are changed for an existing resource (e.g. a Host), OpenTofu may decide that it has to destroy the existing resource and create a new one.
+This is almost never what we want for a managed Foreman Host.
+After editing a host, this Plugin checks OpenTofu's plan for applying the changes.
+If the plan includes a 'delete'-action, it will raise an exception and will not apply the changes.
+
+In case the recreation of a specific resource type is expected behavior, the resource type can be added to an allow-list within the ProviderType definition file.
+The following example allows OpenTofu to destroy and recreate resources of type `hcloud_volume`:
+
+```ruby
+self.recreate_type_allow_list = ['hcloud_volume']
+```
+
 
 ## Development
 

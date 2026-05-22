@@ -242,5 +242,22 @@ module ForemanOpentofu
       assert_includes rendered, 'automount = try(each.value.automount, null)'
       assert_includes rendered, 'format    = try(each.value.format, null)'
     end
+
+    context 'filter_resource_changes' do
+      test 'empty if blank' do
+        assert_equal [], provider_type.filter_resource_changes(nil)
+        assert_equal [], provider_type.filter_resource_changes([])
+      end
+
+      test 'same if no allow-list' do
+        provider_type.recreate_type_allow_list = nil
+        assert_equal [{ 'type' => 'ignored' }, { 'type' => 'ignored-2' }], provider_type.filter_resource_changes([{ 'type' => 'ignored' }, { 'type' => 'ignored-2' }])
+      end
+
+      test 'remove based on allow-list' do
+        provider_type.recreate_type_allow_list = %w[allowed allowed-2]
+        assert_equal [{ 'type' => 'ignored' }], provider_type.filter_resource_changes([{ 'type' => 'allowed' }, { 'type' => 'ignored' }])
+      end
+    end
   end
 end

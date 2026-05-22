@@ -129,7 +129,7 @@ module ForemanOpentofu
       tf_state = FactoryBot.create(:tf_state, uuid: 'uuid1', name: 'existing-vm')
       @nutanix_cr.stubs(:vm_compute_attributes_for).with('uuid1').returns({ 'cpu' => 2 })
 
-      @executor.stubs(:run_create).returns({ 'id' => tf_state.uuid })
+      @executor.stubs(:run_create).with(raise_if_recreate: true).returns({ 'id' => tf_state.uuid })
 
       assert_no_difference('ForemanOpentofu::TfState.count') do
         vm = @nutanix_cr.save_vm('uuid1', { 'cpu' => 4 })
@@ -142,7 +142,7 @@ module ForemanOpentofu
       @nutanix_cr.stubs(:vm_compute_attributes_for).with('uuid1').returns({ 'cpu' => 2 })
       @nutanix_cr.expects(:client).with(has_entries('name' => 'existing-vm', :cpu => 2)).returns(@executor)
 
-      @executor.stubs(:run_create).returns({ 'id' => tf_state.uuid })
+      @executor.stubs(:run_create).with(raise_if_recreate: true).returns({ 'id' => tf_state.uuid })
 
       assert_no_difference('ForemanOpentofu::TfState.count') do
         vm = @nutanix_cr.save_vm('uuid1', [])
@@ -154,7 +154,7 @@ module ForemanOpentofu
       FactoryBot.create(:tf_state, uuid: 'uuid1', name: 'existing-vm')
       @nutanix_cr.stubs(:vm_compute_attributes_for).with('uuid1').returns({ 'cpu' => 2 })
 
-      @executor.stubs(:run_create).raises(StandardError.new('update failed'))
+      @executor.stubs(:run_create).with(raise_if_recreate: true).raises(StandardError.new('update failed'))
 
       assert_no_difference('ForemanOpentofu::TfState.count') do
         assert_raises(Foreman::WrappedException) do

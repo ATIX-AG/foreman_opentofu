@@ -1,7 +1,8 @@
 module ForemanOpentofu
   class ProviderType
     attr_reader :id, :name, :default_attributes, :default_interfaces, :default_volumes
-    attr_accessor :capabilities, :disk_renderer, :nic_renderer
+    attr_accessor :capabilities, :disk_renderer, :nic_renderer,
+      :recreate_type_allow_list
 
     def initialize(id)
       @id = id.to_sym
@@ -107,6 +108,16 @@ module ForemanOpentofu
     # to map to Foreman's expected interfaces_attributes shape.
     def normalize_interfaces(vm_attrs)
       vm_attrs
+    end
+
+    def filter_resource_changes(resources)
+      return [] if resources.blank?
+
+      result = resources.clone
+
+      result.reject! { |res| recreate_type_allow_list.include?(res['type']) } if recreate_type_allow_list.respond_to? :include?
+
+      result
     end
   end
 end
