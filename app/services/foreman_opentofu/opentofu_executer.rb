@@ -73,8 +73,13 @@ module ForemanOpentofu
       run('test', &:plan)
     end
 
-    def run_create
+    def run_create(raise_if_recreate: false)
       run('create') do |tofu|
+        if raise_if_recreate
+          # check the plan in advance to verify we do not replace the VM
+          tofu.plan
+          raise 'OpenTofu planned to re-create a resource; action aborted (check logs for details)!' if plan_wants_recreate? tofu.show_plan
+        end
         tofu.apply
         attrs = tofu.output('vm_attrs')
         ForemanOpentofu::TfState.find_by(name: @cr_attrs['name'])&.update(uuid: attrs['identity'])
@@ -148,6 +153,29 @@ module ForemanOpentofu
       end
 
       template
+    end
+
+    def plan_wants_recreate?(plan)
+      need_recreate = plan['resource_changes'].select { |res| (res.dig('change', 'actions') || []).include?('delete') }
+      need_recreate = @compute_resource.tofu_provider.filter_resource_changes need_recreate
+      # {
+      #   "address": "hcloud_server.node1",
+      #   "mode": "managed",
+      #   "type": "hcloud_server",
+      #   "name": "node1",
+      #   "provider_name": "registry.opentofu.org/hetznercloud/hcloud",
+      #   "change": {
+      #     "actions": [
+      #       "create"
+      #     ],
+
+      unless need_recreate.empty?
+        need_recreate.each do |res|
+          Rails.logger.warn("Re-Create of #{res['address']} planned; if this is not an issue add type #{res['type'].inspect} to the allow-list of the ProviderType.")
+        end
+        return true
+      end
+      false
     end
   end
 end
