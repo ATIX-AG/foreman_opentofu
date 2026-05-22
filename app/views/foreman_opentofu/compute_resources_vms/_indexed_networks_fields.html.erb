@@ -1,6 +1,7 @@
 <% if compute_resource.is_a?(ForemanOpentofu::Tofu) %>
+  <% association_attributes = "#{compute_resource.interfaces_attrs_name}_attributes" %>
   <div class="<%= compute_resource.interfaces_attrs_name %>_fields_template form_template" style="display: none;">
-    <%= fields_for "#{f.object_name}[#{compute_resource.interfaces_attrs_name}][new_#{compute_resource.interfaces_attrs_name}]", compute_resource.new_interface do |i| %>
+    <%= fields_for "#{f.object_name}[#{association_attributes}][new_#{compute_resource.interfaces_attrs_name}]", compute_resource.new_interface do |i| %>
       <%= render :partial => provider_partial(compute_resource, 'network'),
                  :locals => { :f => i, :compute_resource => compute_resource, :new_host => new_host, :new_vm => new_vm, :remove_title => _('remove network interface'), :selected_cluster => selected_cluster },
                  :layout => 'compute_resources_vms/form/deletable_layout' %>

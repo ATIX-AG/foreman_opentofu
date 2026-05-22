@@ -94,15 +94,11 @@ module ForemanOpentofu
       end
 
       def build_disks
-        disks = @cr_attrs['volumes'].presence || @cr_attrs['volumes_attributes'].presence || @compute_resource.default_volumes
-        return '' if disks.blank?
-        disks = [disks] if disks.is_a?(Hash)
-        disks.each_with_index.map do |disk, index|
+        disk_render_source.each_with_index.filter_map do |disk, index|
           # drop removed disks; tofu will drop them automatically, if they are no longer defined
-          next if disk['_delete'].to_i == 1
+          next if disk.respond_to?(:[]) && disk['_delete'].to_i == 1
 
-          data = @compute_resource.render_disk(disk, self, index)
-          render_provider_data(data)
+          rendered_disk(index, disk)
         end.join("\n")
       end
 
@@ -115,6 +111,20 @@ module ForemanOpentofu
 
       private
 
+      def disk_render_source
+        disks = @cr_attrs['volumes'].presence || @cr_attrs['volumes_attributes'].presence || @compute_resource.default_volumes
+        disks = [disks] if disks.is_a?(Hash)
+        disks = [] if disks.blank?
+        disks.empty? ? [nil] : disks
+      end
+
+      def rendered_disk(index, disk)
+        data = @compute_resource.render_disk(disk, self, index)
+        return if data.blank?
+
+        render_provider_data(data)
+      end
+
       def nics_from_cr_attrs
         nics = @cr_attrs['interfaces'].presence || @cr_attrs['interfaces_attributes'].presence || @compute_resource.default_interfaces
         normalize_interfaces(nics).map do |nic|
@@ -126,7 +136,9 @@ module ForemanOpentofu
       end
 
       def render_provider_data(data)
-        if data.is_a?(Hash) && data[:resource].present?
+        if data.is_a?(String)
+          data
+        elsif data.is_a?(Hash) && data[:resource].present?
           resource = data[:resource]
           block_to_hcl(['resource', resource[:type], resource[:name]], resource[:content], depth: 0)
         elsif data.is_a?(Hash) && data.size == 1 && data.values.first.is_a?(Hash)

@@ -80,5 +80,11 @@ module ForemanOpentofu
       return '' unless nic_renderer
       context.instance_exec(nic, *args, &nic_renderer)
     end
+
+    # Normalize provider-specific NIC data
+    # to map to Foreman's expected interfaces_attributes shape.
+    def normalize_interfaces(vm_attrs)
+      vm_attrs
+    end
   end
 end

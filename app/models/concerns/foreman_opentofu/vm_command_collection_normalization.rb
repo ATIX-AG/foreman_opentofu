@@ -3,12 +3,29 @@ module ForemanOpentofu
     private
 
     def normalize_vm_args_collections!(args)
+      args[:image_id] = args[:image] if args.key?(:image)
+      normalize_vm_boolean_args!(args)
       [:volumes, :interfaces].each do |collection|
         raw = args.delete(:"#{collection}_attributes") || args[collection]
         next if raw.nil?
 
         args[collection] = normalize_collection_input(collection, raw)
       end
+    end
+
+    def normalize_vm_boolean_args!(args)
+      vm_boolean_keys.each do |key|
+        next unless args.key?(key)
+        args[key] = Foreman::Cast.to_bool(args[key])
+      end
+    end
+
+    def vm_boolean_keys
+      return [] unless respond_to?(:tofu_provider) && tofu_provider.respond_to?(:attributes)
+
+      tofu_provider.attributes('vm')
+                   .select { |attr| attr['type'] == 'bool' }
+                   .map { |attr| attr['name'].to_sym }
     end
 
     def normalize_collection_input(collection, value)

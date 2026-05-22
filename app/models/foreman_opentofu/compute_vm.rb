@@ -61,8 +61,14 @@ module ForemanOpentofu
       instance_eval(&block)
     end
 
-    def volumes
-      attribute_value('volumes') || []
+    def volumes_attributes
+      vols_attrs = attribute_value('volumes_attributes')
+      return vols_attrs if vols_attrs.is_a?(Hash)
+
+      list = vols_attrs.presence || attribute_value('volumes')
+      return {} if list.blank?
+
+      Array(list).each_with_index.to_h { |vol, idx| [idx.to_s, vol] }
     end
 
     private
