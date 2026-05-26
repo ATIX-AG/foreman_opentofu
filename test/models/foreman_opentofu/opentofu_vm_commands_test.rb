@@ -1,4 +1,4 @@
-require 'test_helper'
+require 'test_plugin_helper'
 
 module ForemanOpentofu
   class OpentofuVMCommandsTest < ActiveSupport::TestCase
@@ -33,11 +33,18 @@ module ForemanOpentofu
         )
       end
 
-      test 'returns OpenStruct with attributes' do
+      test 'returns ComputeVM with attributes' do
         vm = @nutanix_cr.new_vm('name' => 'vm1')
 
-        assert_instance_of OpenStruct, vm
+        assert_instance_of ComputeVM, vm
         assert_equal 'vm1', vm.name
+      end
+
+      test 'preserves requested attributes missing from terraform after data' do
+        vm = @nutanix_cr.new_vm('name' => 'vm1', 'memory_size_mib' => 2048)
+
+        assert_equal 2048, vm.memory_size_mib
+        assert_equal({ 'name' => 'vm1', 'memory_size_mib' => 2048 }, vm.to_h.slice('name', 'memory_size_mib'))
       end
 
       test 'prefills mandatory attributes' do
@@ -81,6 +88,41 @@ module ForemanOpentofu
         assert_kind_of Array, captured_args[:interfaces]
         assert_equal 'net-1', captured_args[:interfaces][0][:network_id]
         assert_equal 'vmxnet3', captured_args[:interfaces][0][:adapter_type]
+      end
+
+      test 'drops collection placeholders and unsaved deleted entries before client call' do
+        captured_args = nil
+        @nutanix_cr.stubs(:client).with do |args|
+          captured_args = args
+          true
+        end.returns(@executor)
+        @executor.stubs(:run_create).returns({ 'id' => 'vm1' })
+
+        @nutanix_cr.create_vm(
+          'name' => 'vm1',
+          'volumes' => {
+            '0' => { 'size' => '13', 'label' => 'disk0' },
+            'new_volumes' => { 'size' => '99', 'label' => 'ignored-placeholder' },
+            'new_123' => { 'size' => '20', 'label' => 'disk1' },
+            '1' => { '_delete' => '1', 'size' => '30', 'label' => 'deleted-disk' },
+          },
+          'interfaces_attributes' => {
+            '0' => { 'network_id' => 'net-1', 'adapter_type' => 'vmxnet3' },
+            'new_interfaces' => { 'network_id' => 'ignored' },
+            'new_456' => { 'network_id' => 'net-2', 'adapter_type' => 'e1000' },
+            '1' => { '_delete' => '1', 'network_id' => 'net-3', 'adapter_type' => 'e1000' },
+          }
+        )
+
+        assert_equal [
+          { size: '13', label: 'disk0' },
+          { size: '20', label: 'disk1' },
+        ], captured_args[:volumes]
+
+        assert_equal [
+          { network_id: 'net-1', adapter_type: 'vmxnet3' },
+          { network_id: 'net-2', adapter_type: 'e1000' },
+        ], captured_args[:interfaces]
       end
 
       test 'wraps exceptions' do

@@ -1,5 +1,12 @@
 <%
-  volumes = f.object.volumes_attributes
+  volumes =
+    if f.object.respond_to?(:volumes_attributes)
+      f.object.volumes_attributes
+    elsif f.object.respond_to?(:volumes)
+      f.object.volumes
+    else
+      {}
+    end
   volumes =
     if volumes.is_a?(Hash)
       volumes.sort_by { |key, _| key.to_s.sub('new_', '').to_i }

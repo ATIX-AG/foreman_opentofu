@@ -2,7 +2,10 @@ require 'test_helper'
 
 module ForemanOpentofu
   class TofuKeypairTest < ActiveSupport::TestCase
-    let(:key_pair) { FactoryBot.create(:key_pair) }
+    # Added public and secret key to key_pair to avoid Minitest 6 deprecation warning for assert_nil
+    let(:key_pair) do
+      FactoryBot.create(:key_pair, public: 'ssh-rsa test-public', secret: 'test-private')
+    end
     let(:subject) { TofuKeyPair.new key_pair.name }
 
     test 'finds KeyPair' do

@@ -5,6 +5,10 @@ require "#{ForemanOpentofu::Engine.root}/app/services/foreman_opentofu/provider_
 ForemanOpentofu::ProviderTypeManager.register('hetzner') do
   @capabilities = [:image, :key_pair, :power_status_only]
 
+  def disk_renderer_collection?
+    true
+  end
+
   def provided_attributes
     {
       ip: :vm_ip_address,
@@ -125,7 +129,7 @@ ForemanOpentofu::ProviderTypeManager.register('hetzner') do
       }
 
       resource "hcloud_volume" "volumes" {
-        for_each  = { for k, d in local.disks : tostring(try(d.id, k)) => d if try(d["_delete"], "0") != "1" }
+        for_each  = { for k, d in local.disks : tostring(k) => d if try(d["_delete"], "0") != "1" }
         name      = try(each.value.name, "volume-${each.key}")
         size      = try(each.value.size, 20)
         server_id = hcloud_server.node1.id

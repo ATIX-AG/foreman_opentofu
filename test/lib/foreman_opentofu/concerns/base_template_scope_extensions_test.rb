@@ -1,3 +1,5 @@
+require 'test_plugin_helper'
+
 module ForemanOpentofu
   class BaseTemplateScopeExtensionsTest < ActiveSupport::TestCase
     test 'backend_block' do
@@ -108,9 +110,12 @@ module ForemanOpentofu
     end
 
     test 'build_disks renders provider-defined resource snippets' do
-      cr = FactoryBot.create(:opentofu_nutanix_cr)
-      cr.stubs(:default_volumes).returns([])
-      cr.stubs(:render_disk).with({ 'size' => 50 }, anything, 0).returns(
+      cr = stub(default_volumes: [])
+      cr.stubs(:render_disk).with do |disk, render_scope, index|
+        disk == { 'size' => 50 } &&
+          index.zero? &&
+          render_scope.respond_to?(:build_disks)
+      end.returns(
         {
           resource: {
             type: 'hcloud_volume',
@@ -138,18 +143,28 @@ module ForemanOpentofu
       assert_not_includes block, 'size = 60'
     end
 
-    test 'build_nics renders provider-defined resource snippets' do
-      cr = FactoryBot.create(:opentofu_nutanix_cr)
-      cr.stubs(:default_nics).returns([])
-      cr.stubs(:render_nic).with({ 'network_id' => '123' }, anything, 0).returns(
-        {
-          resource: {
-            type: 'provider_nic',
-            name: 'network1',
-            content: { network_id: 123 },
-          },
-        }
+    test 'hetzner volume rendering forwards delete attribute and filters deleted volumes' do
+      ForemanOpentofu::Tofu.any_instance.stubs(:setup_key_pair)
+      cr = FactoryBot.create(:opentofu_hetzner_cr)
+      source = ::Foreman::Renderer::Source::String.new(
+        name: 'Parameter',
+        content: '<%= build_disks %>'
       )
+      scope = ::Foreman::Renderer.get_scope(variables: {
+        compute_resource: cr,
+        cr_attrs: { 'volumes' => [{ '_delete' => '1', 'size' => 60 }] },
+      })
+
+      block = ::Foreman::Renderer.render(source, scope)
+
+      assert_equal 1, block.split('resource "hcloud_volume" "volumes"').length - 1
+      assert_includes block, 'for_each  = { for k, d in local.disks : tostring(k) => d if try(d["_delete"], "0") != "1" }'
+      assert_includes block, '_delete = "1"'
+    end
+
+    test 'build_nics renders provider-defined nic blocks' do
+      ForemanOpentofu::Tofu.any_instance.stubs(:setup_key_pair)
+      cr = FactoryBot.create(:opentofu_hetzner_cr)
       source = ::Foreman::Renderer::Source::String.new(
         name: 'Parameter',
         content: '<%= build_nics %>'
@@ -163,9 +178,10 @@ module ForemanOpentofu
       })
       block = ::Foreman::Renderer.render(source, scope)
 
-      assert_includes block, 'resource "provider_nic" "network1"'
-      assert_includes block, 'network_id = 123'
-      assert_not_includes block, 'network_id = 456'
+      assert_equal 1, block.scan("\n  network ").size
+      assert_includes block, 'network_id = "123"'
+      assert_not_includes block, 'network_id = 123'
+      assert_not_includes block, 'network_id = "456"'
     end
 
     test 'resource_block' do
