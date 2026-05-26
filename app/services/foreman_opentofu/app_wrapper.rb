@@ -61,8 +61,14 @@ module ForemanOpentofu
       tofu_execute('plan', ["-out=#{planfile}"].concat(parse_params(params)))
     end
 
+    # run 'tofu apply' with specified 'params'.
+    # Note: it is not supported to specify a tofu plan file in the 'params'-parameter.
+    #       If the 'plan'-method has run on this object, then 'apply' uses the created plan.
     def apply(params = [])
-      tofu_execute('apply', ['-auto-approve'].concat(parse_params(params)))
+      params_parsed = parse_params(params)
+      params_parsed.append(planfile) if planned?
+
+      tofu_execute('apply', ['-auto-approve'].concat(params_parsed))
     end
 
     def destroy(params = [])
@@ -76,6 +82,10 @@ module ForemanOpentofu
     # TODO: find better name ;-)
     def show_plan(params = [])
       JSON.parse(tofu_execute('show', ['-json', planfile].concat(parse_params(params))))
+    end
+
+    def planned?
+      File.exist?(planfile)
     end
 
     def main_configuration
