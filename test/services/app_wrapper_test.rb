@@ -77,5 +77,34 @@ module ForemanOpentofu
       app_wrapper.expects(:tofu_execute)
       app_wrapper.init
     end
+
+    context 'apply()' do
+      test 'executes with -auto-approve' do
+        app_wrapper.expects(:tofu_execute).with('apply', ['-auto-approve'])
+
+        app_wrapper.apply
+      end
+
+      test 'uses plan-file, if present' do
+        FileUtils.touch app_wrapper.planfile
+        app_wrapper.expects(:tofu_execute).with('apply', ['-auto-approve', app_wrapper.planfile])
+
+        app_wrapper.apply
+      end
+
+      test 'accepts additional parameters Array' do
+        FileUtils.touch app_wrapper.planfile
+        app_wrapper.expects(:tofu_execute).with('apply', ['-auto-approve', '-input=false', '-no-color', app_wrapper.planfile])
+
+        app_wrapper.apply(['-input=false', '-no-color'])
+      end
+
+      test 'accepts additional parameters String' do
+        FileUtils.touch app_wrapper.planfile
+        app_wrapper.expects(:tofu_execute).with('apply', ['-auto-approve', '-no-color', app_wrapper.planfile])
+
+        app_wrapper.apply('-no-color')
+      end
+    end
   end
 end
