@@ -64,7 +64,7 @@ Provisioning workflow:
 
 Provider-specific details (for example Nutanix, Hetzner) are handled entirely through OpenTofu scripts.
 
-### Create new ProviderType
+### Add support for a new Tofu-Provider
 
 This Plugin empowers you to add support of a new backend VM- or Cloud-Platform yourself.
 Follow these simple steps to do so:
@@ -80,11 +80,39 @@ You may use the UI-Editor in Hosts -> Templates -> Provisioning Templates to cre
 Either clone a pre-installed template or create one from scratch.
 In the latter case be sure to select the correct Template Type: OpenTofu Script template.
 
+
+#### Create Provider Type
+
+To let the Foreman OpenTofu Plugin know about your new Provider Type, one additional file has to be created in `/lib/foreman_opentofu/provider_types/`.
+
+A very simple ProviderType file to add a new Provider named `nutanix` has to be located in `lib/foreman_opentofu/provider_types/nutanix.rb` and might look like this:
+
+```ruby
+ForemanOpentofu::ProviderTypeManager.register('nutanix') do
+end
+```
+
+Additional informations about the ProviderType can be set within the `register`-block:
+
+##### `default_attributes`
+
+Define values that should be set as default for attributes.
+The values do not have to be defined in the config-file.
+If attributes are also defined in the config-file and therefore set during Host creation, the default\_attribute values will be overwritten.
+
+```ruby
+ForemanOpentofu::ProviderTypeManager.register('nutanix') do
+  @default_attributes = {
+    'enable_cpu_passthrough' => true,
+    'num_threads_per_core' => 2,
+  }
+end
+```
+
 #### Create Parameter Config
 
-To define which Virtual Machine parameters can be set for a new Host a new config file under `/config` must be added.
-Feel free to use either YAML or JSON (be sure to end the filename with `.json` or `.yaml`).
-The config file defines an array of dicts, where each dict represents a configuration-parameter.
+To define which Virtual Machine parameters can be set for a new Host the `self.provider_attrs` variable must be defined within the `register`-block.
+The `provider_attrs`-variable defines an Array of Dicts/Hashes, where each Dict/Hash represents a configuration-parameter.
 
 A config-parameter has the following values:
 
@@ -104,22 +132,20 @@ A config-parameter has the following values:
    * `disk`: for each defined disk/volume in the 'Virtual Machine' tab
    * `nic`: for each defined network-interface on the 'Interfaces' tab
 
-A short config file might look like this:
+A short definition might look like this:
 
-```json
-[
-  { "name": "memory_size_mib", "type": "number", "group": "vm", "mandatory": false,
-    "label": "Memory (MB)" },
-  { "name": "boot_type", "type": "select", "group": "vm", "mandatory": false,
-    "label": "Firmware", "options": [ "UEFI", "LEGACY", "SECURE_BOOT" ] },
-  { "name": "disk_size_mib", "type": "number", "group": "disk", "mandatory": true,
-    "label": "Size (MB)" },
-  { "name": "model", "type": "select", "group": "nic", "mandatory": true,
-    "options": [ "VIRTIO", "E1000" ] }
+```ruby
+self.provider_attrs = [
+  { name: 'memory_size_mib', type: 'number', group: 'vm', mandatory: false,
+    label: 'Memory (MB)' },
+  { name: 'boot_type', type: 'select', group: 'vm', mandatory: false,
+    label: 'Firmware', options: [ 'UEFI', 'LEGACY', 'SECURE_BOOT' ] },
+  { name: 'disk_size_mib', type: 'number', group: 'disk', mandatory: true,
+    label: 'Size (MB)' },
+  { name: 'model', type: 'select', group: 'nic', mandatory: true,
+    options: [ 'VIRTIO', 'E1000' ] }
 ]
 ```
-
-The name of the file must be the same as the provider-type name we set in the next step (e.g. `/config/nutanix.json`).
 
 ##### Dynamic Config Parameter
 
@@ -127,26 +153,26 @@ Sometimes it is necessary to provide a list of possible values that are defined 
 Curating the 'options'-Array is tedious at best or not possible if multiple instances of the backend service are in use.
 This can be addressed by specifiying an OpenTofu provider's [DataSource](https://opentofu.org/docs/language/data-sources/) in the following way:
 
-```json
+```ruby
 {
-  "name": "volume_group", "type": "select", "group": "disk", "mandatory": true, "label": "Volume Group",
-  "options": {
-    "data_source": {
-      "name": "nutanix_volume_groups_v2",
-      "arguments": {
-        "filter": "name eq 'volume_group_test'",
-        "limit": 20
+  name: 'volume_group', type: 'select', group: 'disk', mandatory: true, label: 'Volume Group',
+  options: {
+    data_source: {
+      name: 'nutanix_volume_groups_v2',
+      arguments: {
+        filter: 'name eq 'volume_group_test'',
+        limit: 20
       },
-      "entity": {
-        "id": "metadata.uuid"
+      entity: {
+        id: 'metadata.uuid'
       }
     },
-    "output_path_postfix": "volume_groups"
+    output_path_postfix: 'volume_groups'
   }
 }
 
 ```
-The GUI requires a list of objects that at least contain a name and an id for each select-option.
+The GUI requires a list of objects that at least contains a name and an id for each select-option.
 The `entity` section can be used to define a specific value from an object within the list that the DataSource returns.
 If the object already has `name` and `id` entries, these will automatically used.
 In the above example `name` exists in the object and can be used.
@@ -177,15 +203,15 @@ For instance, Image-based Deployment requires binding images available on the ba
 To enable Foreman OpenTofu to display the available images, a `select`-parameter with the name `available_images` must be specified.
 It is recommended to tie this to a data-source available in the OpenTofu provider.
 
-```json
+```ruby
 {
-  "name": "available_images", "type": "select",
-  "options": {
-    "data_source": {
-      "name": "hcloud_images",
-      "arguments": { "with_architecture": ["x86"] }
+  name: 'available_images', type: 'select',
+  options: {
+    data_source: {
+      name: 'hcloud_images',
+      arguments: { with_architecture: ['x86'] }
     },
-    "output_path_postfix": "images"
+    output_path_postfix: 'images'
   }
 }
 ```
@@ -208,35 +234,6 @@ This dynamic data-source should provide a list of SSH keys known to the cloud-pr
     output_path_postfix: 'ssh_keys',
   }
 }
-```
-
-
-#### Create Provider Type
-
-To let the Foreman OpenTofu Plugin know about your new Provider Type, one additional file has to be created in `/lib/foreman_opentofu/provider_types/`.
-
-A very simple ProviderType file to add a new Provider named `nutanix` has to be located in `lib/foreman_opentofu/provider_types/nutanix.rb` and might look like this:
-
-```ruby
-ForemanOpentofu::ProviderTypeManager.register('nutanix') do
-end
-```
-
-Additional informations about the ProviderType can be set within the `register`-block:
-
-##### `default_attributes`
-
-Define values that should be set as default for attributes.
-The values do not have to be defined in the config-file.
-If attributes are also defined in the config-file and therefore set during Host creation, the default\_attribute values will be overwritten.
-
-```ruby
-ForemanOpentofu::ProviderTypeManager.register('nutanix') do
-  @default_attributes = {
-    'enable_cpu_passthrough' => true,
-    'num_threads_per_core' => 2,
-  }
-end
 ```
 
 
