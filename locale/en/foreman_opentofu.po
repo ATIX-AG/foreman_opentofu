@@ -3,10 +3,9 @@
 # This file is distributed under the same license as the foreman_opentofu package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: foreman_opentofu 1.0.0\n"
+"Project-Id-Version: foreman_opentofu 0.0.4\n"
 "Report-Msgid-Bugs-To: \n"
 "PO-Revision-Date: 2026-02-16 18:46+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
@@ -20,7 +19,55 @@ msgstr ""
 msgid "127.0.0.1"
 msgstr ""
 
+msgid "Add Interface"
+msgstr ""
+
+msgid "Add Volume"
+msgstr ""
+
+msgid "Cache slow calls to Opentofu Compute resources to speed up page rendering"
+msgstr ""
+
+msgid "Caching"
+msgstr ""
+
 msgid "Common fields"
+msgstr ""
+
+msgid "Disabled"
+msgstr ""
+
+msgid "Does this image support user data input (e.g. via cloud-init)?"
+msgstr ""
+
+msgid "Enable caching"
+msgstr ""
+
+msgid "Enabled"
+msgstr ""
+
+msgid "ID of the Image on the Hypervisor"
+msgstr ""
+
+msgid "Image"
+msgstr ""
+
+msgid "Image \"%{image}\" needs user data, but \"%{os}\" is not associated to any provisioning template of the kind user_data. Please associate it with a suitable template or uncheck 'User data' from the image definition."
+msgstr ""
+
+msgid "Image ID"
+msgstr ""
+
+msgid "Network interfaces"
+msgstr ""
+
+msgid "No networks found."
+msgstr ""
+
+msgid "Number of Bits for the SSH-Key required to provision hosts on image-based providers."
+msgstr ""
+
+msgid "Number of seconds a run of Opentofu command is allowed to report tf-state back to the plugin."
 msgstr ""
 
 msgid "OpenTofu Provider"
@@ -32,10 +79,28 @@ msgstr ""
 msgid "OpenTofu Template"
 msgstr ""
 
-msgid "Storage"
+msgid "Opentofu"
+msgstr ""
+
+msgid "Password to authenticate with - used for SSH finish step."
+msgstr ""
+
+msgid "Please select an image"
+msgstr ""
+
+msgid "Power change operations are not enabled on this host."
+msgstr ""
+
+msgid "SSH-Key Length"
 msgstr ""
 
 msgid "TODO: Description of ForemanPluginTemplate."
+msgstr ""
+
+msgid "TfState Token Timeout"
+msgstr ""
+
+msgid "The user that is used to ssh into the instance, normally cloud-user, ec2-user, ubuntu, root etc"
 msgstr ""
 
 msgid "URL"
@@ -50,5 +115,17 @@ msgstr ""
 msgid "VM Config"
 msgstr ""
 
+msgid "add new network interface"
+msgstr ""
+
+msgid "add new storage volume"
+msgstr ""
+
 msgid "e.g. admin"
+msgstr ""
+
+msgid "remove network interface"
+msgstr ""
+
+msgid "remove storage volume"
 msgstr ""

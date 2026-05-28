@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: foreman_opentofu 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-16 18:46+0000\n"
-"PO-Revision-Date: 2026-02-16 18:46+0000\n"
+"POT-Creation-Date: 2026-05-28 11:35+0000\n"
+"PO-Revision-Date: 2026-05-28 11:35+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
@@ -18,16 +18,40 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
 
-#: ../app/services/foreman_opentofu/opentofu_executer.rb:53
+#:
+#: ../app/controllers/concerns/foreman_opentofu/api/v2/hosts_controller_power_override.rb:7
+#: ../app/controllers/concerns/foreman_opentofu/api/v2/hosts_controller_power_override.rb:15
+#: ../app/controllers/concerns/foreman_opentofu/hosts_controller_power_override.rb:7
+msgid "Power change operations are not enabled on this host."
+msgstr ""
+
+#: ../app/models/concerns/orchestration/tofu/compute.rb:29
+msgid ""
+"Image \"%{image}\" needs user data, but \"%{os}\" is not associated to any provisi"
+"oning template of the kind user_data. Please associate it with a suitable temp"
+"late or uncheck 'User data' from the image definition."
+msgstr ""
+
+#: ../app/services/foreman_opentofu/opentofu_executer.rb:138
 msgid "Unable to render provisioning template"
 msgstr ""
 
-#: ../app/services/foreman_opentofu/opentofu_executer.rb:62
+#: ../app/services/foreman_opentofu/opentofu_executer.rb:151
 msgid "Unable to find template specified by %s setting"
 msgstr ""
 
 #: ../app/views/compute_resources/form/_tofu.html.erb:1
 msgid "Common fields"
+msgstr ""
+
+#: ../app/views/compute_resources/form/_tofu.html.erb:2
+#: ../app/views/compute_resources/show/_tofu.html.erb:2
+msgid "OpenTofu Provider"
+msgstr ""
+
+#: ../app/views/compute_resources/form/_tofu.html.erb:3
+#: ../app/views/compute_resources/show/_tofu.html.erb:6
+msgid "OpenTofu Template"
 msgstr ""
 
 #: ../app/views/compute_resources/form/_tofu.html.erb:4
@@ -38,28 +62,142 @@ msgstr ""
 msgid "e.g. admin"
 msgstr ""
 
-#: ../app/views/compute_resources/show/_tofu.html.erb:2
-msgid "OpenTofu Provider"
+#: ../app/views/compute_resources/form/_tofu.html.erb:7
+msgid "Enable caching"
 msgstr ""
 
-#: ../app/views/compute_resources/show/_tofu.html.erb:6
-msgid "OpenTofu Template"
+#: ../app/views/compute_resources/form/_tofu.html.erb:8
+msgid "Cache slow calls to Opentofu Compute resources to speed up page rendering"
 msgstr ""
 
 #: ../app/views/compute_resources/show/_tofu.html.erb:10
 msgid "URL"
 msgstr ""
 
-#: ../app/views/compute_resources_vms/form/tofu/_base.html.erb:5
+#: ../app/views/compute_resources/show/_tofu.html.erb:14
+msgid "Caching"
+msgstr ""
+
+#: ../app/views/compute_resources/show/_tofu.html.erb:15
+msgid "Enabled"
+msgstr ""
+
+#: ../app/views/compute_resources/show/_tofu.html.erb:15
+msgid "Disabled"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/form/tofu/_base.html.erb:4
 msgid "VM Config"
 msgstr ""
 
-#: ../app/views/compute_resources_vms/form/tofu/_base.html.erb:9
-msgid "Storage"
+#: ../app/views/compute_resources_vms/form/tofu/_base.html.erb:17
+msgid "Please select an image"
+msgstr ""
+
+#: ../app/views/compute_resources_vms/form/tofu/_base.html.erb:18
+msgid "Image"
+msgstr ""
+
+#:
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_networks_fields.html.erb:6
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_networks_fields.html.erb:27
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_networks_fields.html.erb:34
+#: ../app/views/foreman_opentofu/compute_resources_vms/form/tofu/_interfaces_fields.html.erb:10
+msgid "remove network interface"
+msgstr ""
+
+#:
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_networks_fields.html.erb:11
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_networks_fields.html.erb:30
+msgid "Network interfaces"
+msgstr ""
+
+#:
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_networks_fields.html.erb:16
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_networks_fields.html.erb:38
+msgid "Add Interface"
+msgstr ""
+
+#:
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_networks_fields.html.erb:16
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_networks_fields.html.erb:38
+msgid "add new network interface"
+msgstr ""
+
+#:
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_networks_fields.html.erb:19
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_networks_fields.html.erb:42
+msgid "No networks found."
+msgstr ""
+
+#:
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_volumes_fields.html.erb:5
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_volumes_fields.html.erb:18
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_volumes_fields.html.erb:22
+#: ../app/views/foreman_opentofu/compute_resources_vms/form/tofu/_volumes_fields.html.erb:15
+msgid "remove storage volume"
+msgstr ""
+
+#:
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_volumes_fields.html.erb:13
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_volumes_fields.html.erb:26
+msgid "Add Volume"
+msgstr ""
+
+#:
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_volumes_fields.html.erb:13
+#: ../app/views/foreman_opentofu/compute_resources_vms/_indexed_volumes_fields.html.erb:26
+msgid "add new storage volume"
+msgstr ""
+
+#: ../app/views/images/form/_tofu.html.erb:1
+msgid ""
+"The user that is used to ssh into the instance, normally cloud-user, ec2-user,"
+" ubuntu, root etc"
+msgstr ""
+
+#: ../app/views/images/form/_tofu.html.erb:2
+msgid "Does this image support user data input (e.g. via cloud-init)?"
+msgstr ""
+
+#: ../app/views/images/form/_tofu.html.erb:3
+msgid "Password to authenticate with - used for SSH finish step."
+msgstr ""
+
+#: ../app/views/images/form/_tofu.html.erb:4
+msgid "Image ID"
+msgstr ""
+
+#: ../app/views/images/form/_tofu.html.erb:4
+msgid "ID of the Image on the Hypervisor"
 msgstr ""
 
 #: ../lib/foreman_opentofu/engine.rb:26
 msgid "OpenTofu Script template"
+msgstr ""
+
+#: ../lib/foreman_opentofu/engine.rb:29
+msgid "Opentofu"
+msgstr ""
+
+#: ../lib/foreman_opentofu/engine.rb:33
+msgid "TfState Token Timeout"
+msgstr ""
+
+#: ../lib/foreman_opentofu/engine.rb:34
+msgid ""
+"Number of seconds a run of Opentofu command is allowed to report tf-state back"
+" to the plugin."
+msgstr ""
+
+#: ../lib/foreman_opentofu/engine.rb:38
+msgid "SSH-Key Length"
+msgstr ""
+
+#: ../lib/foreman_opentofu/engine.rb:39
+msgid ""
+"Number of Bits for the SSH-Key required to provision hosts on image-based prov"
+"iders."
 msgstr ""
 
 #: gemspec.rb:2

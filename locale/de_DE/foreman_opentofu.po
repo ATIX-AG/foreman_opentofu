@@ -1,0 +1,59 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the foreman_opentofu package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+# Translators:
+# Jörg Dreffein, 2026
+# Markus Bucher <bucher@atix.de>, 2026
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: foreman_opentofu 1.0.0\n"
+"Report-Msgid-Bugs-To: \n"
+"PO-Revision-Date: 2026-02-16 11:45+0000\n"
+"Last-Translator: Markus Bucher <bucher@atix.de>, 2026\n"
+"Language-Team: German (Germany) (https://app.transifex.com/foreman/teams/114/d"
+"e_DE/)\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: de_DE\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "127.0.0.1"
+msgstr "127.0.0.1"
+
+msgid "Common fields"
+msgstr "Allgemeine Werte"
+
+msgid "OpenTofu Provider"
+msgstr "OpenTofu Provider"
+
+msgid "OpenTofu Script template"
+msgstr "OpenTofu Script Vorlage"
+
+msgid "OpenTofu Template"
+msgstr "OpenTofu Vorlage"
+
+msgid "Storage"
+msgstr "Speicher"
+
+msgid "TODO: Description of ForemanPluginTemplate."
+msgstr ""
+
+msgid "URL"
+msgstr "URL"
+
+msgid "Unable to find template specified by %s setting"
+msgstr "Konnte Vorlage mit der %s-Einstellung nicht finden"
+
+msgid "Unable to render provisioning template"
+msgstr "Bereitstellungsvorlage konnte nicht verarbeitet werden"
+
+msgid "VM Config"
+msgstr "VM Konfiguration"
+
+msgid "e.g. admin"
+msgstr "z.B. admin"
