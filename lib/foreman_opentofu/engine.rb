@@ -26,12 +26,12 @@ module ForemanOpentofu
           template_labels 'opentofu_script' => N_('OpenTofu Script template')
 
           settings do
-            category :opentofu, N_('Opentofu') do
+            category :opentofu, N_('OpenTofu') do
               setting 'tfstate_token_timeout',
                 type: :integer,
                 default: 600,
                 full_name: N_('TfState Token Timeout'),
-                description: N_('Number of seconds a run of Opentofu command is allowed to report tf-state back to the plugin.')
+                description: N_('Number of seconds a run of OpenTofu command is allowed to report TfState back to the plugin.')
               setting 'tofu_ssh_key_bits',
                 type: :integer,
                 default: 4096,
