@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: foreman_opentofu 1.0.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-28 11:35+0000\n"
-"PO-Revision-Date: 2026-05-28 11:35+0000\n"
+"POT-Creation-Date: 2026-05-28 13:31+0000\n"
+"PO-Revision-Date: 2026-05-28 13:31+0000\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "Language: \n"
@@ -67,7 +67,7 @@ msgid "Enable caching"
 msgstr ""
 
 #: ../app/views/compute_resources/form/_tofu.html.erb:8
-msgid "Cache slow calls to Opentofu Compute resources to speed up page rendering"
+msgid "Cache slow calls to OpenTofu Compute resources to speed up page rendering"
 msgstr ""
 
 #: ../app/views/compute_resources/show/_tofu.html.erb:10
@@ -177,7 +177,7 @@ msgid "OpenTofu Script template"
 msgstr ""
 
 #: ../lib/foreman_opentofu/engine.rb:29
-msgid "Opentofu"
+msgid "OpenTofu"
 msgstr ""
 
 #: ../lib/foreman_opentofu/engine.rb:33
@@ -186,8 +186,8 @@ msgstr ""
 
 #: ../lib/foreman_opentofu/engine.rb:34
 msgid ""
-"Number of seconds a run of Opentofu command is allowed to report tf-state back"
-" to the plugin."
+"Number of seconds a run of OpenTofu command is allowed to report TfState back "
+"to the plugin."
 msgstr ""
 
 #: ../lib/foreman_opentofu/engine.rb:38
