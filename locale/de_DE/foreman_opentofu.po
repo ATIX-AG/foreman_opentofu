@@ -4,13 +4,13 @@
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 # Translators:
+# Maximilian Kolb <kolb@atix.de>, 2026
 # Jörg Dreffein, 2026
 # Markus Bucher <bucher@atix.de>, 2026
 #
-#, fuzzy
 msgid ""
 msgstr ""
-"Project-Id-Version: foreman_opentofu 1.0.0\n"
+"Project-Id-Version: foreman_opentofu 0.0.4\n"
 "Report-Msgid-Bugs-To: \n"
 "PO-Revision-Date: 2026-02-16 11:45+0000\n"
 "Last-Translator: Markus Bucher <bucher@atix.de>, 2026\n"
@@ -25,8 +25,59 @@ msgstr ""
 msgid "127.0.0.1"
 msgstr "127.0.0.1"
 
+msgid "Add Interface"
+msgstr "Interface hinzufügen"
+
+msgid "Add Volume"
+msgstr "Volume hinzufügen"
+
+msgid "Cache slow calls to OpenTofu Compute resources to speed up page rendering"
+msgstr "Ergebnisse langsamer Abfragen zu OpenTofu zwischenspeichern um das Laden der Seiten zu beschleunigen"
+
+msgid "Caching"
+msgstr "Zwischenspeicher"
+
 msgid "Common fields"
 msgstr "Allgemeine Werte"
+
+msgid "Disabled"
+msgstr "Deaktiviert"
+
+msgid "Does this image support user data input (e.g. via cloud-init)?"
+msgstr "Unterstützt dieses Image die Eingabe von Benutzerdaten (z.B. via cloud-init)?"
+
+msgid "Enable caching"
+msgstr "Caching aktivieren"
+
+msgid "Enabled"
+msgstr "Aktiviert"
+
+msgid "ID of the Image on the Hypervisor"
+msgstr "ID des Abbilds auf dem Hypervisor"
+
+msgid "Image"
+msgstr "Abbild"
+
+msgid "Image \"%{image}\" needs user data, but \"%{os}\" is not associated to any provisioning template of the kind user_data. Please associate it with a suitable template or uncheck 'User data' from the image definition."
+msgstr "Abbild \"%{image}\" benötigt Benutzerdaten. Jedoch ist \"%{os}\" keine Bereitstellungsvorlage der Art user_data zugeordnet. Bitte weisen Sie eine geeignete Vorlage zu, oder deaktivieren sie \"Benutzerdaten\" in der Abbilddefinition."
+
+msgid "Image ID"
+msgstr "Abbild ID"
+
+msgid "Network interfaces"
+msgstr "Netzwerkinterface"
+
+msgid "No networks found."
+msgstr "Keine Netzwerke gefunden."
+
+msgid "Number of Bits for the SSH-Key required to provision hosts on image-based providers."
+msgstr "Bitanzahl des SSH-Schlüssels der für die abbildbasierte Bereitstellung von Hosts benötigt wird."
+
+msgid "Number of seconds a run of OpenTofu command is allowed to report TfState back to the plugin."
+msgstr "Anzahl der Sekunden in denen ein OpenTofu Befehl einen TfState an das Plugin zurücksenden darf."
+
+msgid "OpenTofu"
+msgstr "OpenTofu"
 
 msgid "OpenTofu Provider"
 msgstr "OpenTofu Provider"
@@ -37,11 +88,26 @@ msgstr "OpenTofu Script Vorlage"
 msgid "OpenTofu Template"
 msgstr "OpenTofu Vorlage"
 
-msgid "Storage"
-msgstr "Speicher"
+msgid "Password to authenticate with - used for SSH finish step."
+msgstr "Passwort mit dem sich authentifiziert wird - benötigt, um den letzten Schritt mit SSH abzuschließen."
+
+msgid "Please select an image"
+msgstr "Bitte Abbild auswählen"
+
+msgid "Power change operations are not enabled on this host."
+msgstr "Power-Operationen werden auf diesem Host nicht unterstützt"
+
+msgid "SSH-Key Length"
+msgstr "SSH-Schlüssellänge"
 
 msgid "TODO: Description of ForemanPluginTemplate."
 msgstr ""
+
+msgid "TfState Token Timeout"
+msgstr "TfState Token Timeout"
+
+msgid "The user that is used to ssh into the instance, normally cloud-user, ec2-user, ubuntu, root etc"
+msgstr "Der Benutzer für die SSH-Verbindung zur Instanz. Normalerweise cloud-user, ec2-user, ubuntu, root, etc."
 
 msgid "URL"
 msgstr "URL"
@@ -55,5 +121,17 @@ msgstr "Bereitstellungsvorlage konnte nicht verarbeitet werden"
 msgid "VM Config"
 msgstr "VM Konfiguration"
 
+msgid "add new network interface"
+msgstr "neues Netzwerkinterface hinzufügen"
+
+msgid "add new storage volume"
+msgstr "neues Speichervolume hinzufügen"
+
 msgid "e.g. admin"
 msgstr "z.B. admin"
+
+msgid "remove network interface"
+msgstr "Netzwerkinterface entfernen"
+
+msgid "remove storage volume"
+msgstr "entferne Speichervolume"

@@ -25,7 +25,7 @@ msgstr ""
 msgid "Add Volume"
 msgstr ""
 
-msgid "Cache slow calls to Opentofu Compute resources to speed up page rendering"
+msgid "Cache slow calls to OpenTofu Compute resources to speed up page rendering"
 msgstr ""
 
 msgid "Caching"
@@ -67,7 +67,10 @@ msgstr ""
 msgid "Number of Bits for the SSH-Key required to provision hosts on image-based providers."
 msgstr ""
 
-msgid "Number of seconds a run of Opentofu command is allowed to report tf-state back to the plugin."
+msgid "Number of seconds a run of OpenTofu command is allowed to report TfState back to the plugin."
+msgstr ""
+
+msgid "OpenTofu"
 msgstr ""
 
 msgid "OpenTofu Provider"
@@ -77,9 +80,6 @@ msgid "OpenTofu Script template"
 msgstr ""
 
 msgid "OpenTofu Template"
-msgstr ""
-
-msgid "Opentofu"
 msgstr ""
 
 msgid "Password to authenticate with - used for SSH finish step."

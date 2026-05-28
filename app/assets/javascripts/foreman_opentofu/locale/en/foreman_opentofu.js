@@ -26,7 +26,7 @@
       "Add Volume": [
         ""
       ],
-      "Cache slow calls to Opentofu Compute resources to speed up page rendering": [
+      "Cache slow calls to OpenTofu Compute resources to speed up page rendering": [
         ""
       ],
       "Caching": [
@@ -68,7 +68,10 @@
       "Number of Bits for the SSH-Key required to provision hosts on image-based providers.": [
         ""
       ],
-      "Number of seconds a run of Opentofu command is allowed to report tf-state back to the plugin.": [
+      "Number of seconds a run of OpenTofu command is allowed to report TfState back to the plugin.": [
+        ""
+      ],
+      "OpenTofu": [
         ""
       ],
       "OpenTofu Provider": [
@@ -78,9 +81,6 @@
         ""
       ],
       "OpenTofu Template": [
-        ""
-      ],
-      "Opentofu": [
         ""
       ],
       "Password to authenticate with - used for SSH finish step.": [
