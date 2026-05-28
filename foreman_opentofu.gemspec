@@ -9,7 +9,6 @@ Gem::Specification.new do |s|
   s.email       = ['info@atix.de']
   s.homepage    = 'https://github.com/ATIX-AG/foreman_opentofu'
   s.summary     = 'Plugin to provision hosts using OpenTofu'
-  # also update locale/gemspec.rb
   s.description = 'Plugin to provision hosts using OpenTofu with different compute resources'
 
   s.files = Dir['{app,config,db,lib,locale,selinux}/**/*'] + ['LICENSE', 'Rakefile', 'README.md']
