@@ -14,7 +14,7 @@ module ForemanOpentofu
     end
 
     def to_h
-      unwrap(@attributes.to_dup)
+      unwrap(@attributes.deep_dup)
     end
 
     def power
@@ -28,6 +28,21 @@ module ForemanOpentofu
 
     def name
       self['name']
+    end
+
+    def vm_description
+      return nil unless @provider.respond_to?(:tofu_provider)
+
+      vm_attrs = @provider.tofu_provider.attributes('vm')
+      values = vm_attrs.filter_map do |attr|
+        key = attr['name'].to_s
+        value = attribute_value(key)
+        next if value.blank?
+
+        label = attr['label'].presence || key.humanize
+        "#{label}: #{value}"
+      end
+      values.join(', ') if values.present?
     end
 
     def persisted?
@@ -119,6 +134,17 @@ module ForemanOpentofu
       end
     end
 
+    def unwrap(value)
+      case value
+      when Hash
+        value.transform_values { |v| unwrap(v) }
+      when Array
+        value.map { |v| unwrap(v) }
+      else
+        value
+      end
+    end
+
     def flatten_attrs(attrs)
       result = {}
 
@@ -144,7 +170,7 @@ module ForemanOpentofu
       key = method_name.to_s
       return attribute_value(key) if dynamic_attribute_keys.include?(key)
 
-      super
+      nil
     end
   end
 end

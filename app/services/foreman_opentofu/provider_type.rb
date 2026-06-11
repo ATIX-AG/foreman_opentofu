@@ -119,5 +119,11 @@ module ForemanOpentofu
 
       result
     end
+
+    # Whether disk renderer emits one collection resource for all disks (for_each)
+    # instead of one resource block per disk entry.
+    def disk_renderer_collection?
+      false
+    end
   end
 end

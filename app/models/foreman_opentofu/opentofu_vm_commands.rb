@@ -18,7 +18,8 @@ module ForemanOpentofu
         executor = client(args)
         data = executor.run_new
         attrs = data['resource_changes'].first['change']['after'] || {}
-        OpenStruct.new(attrs)
+        attrs = args.deep_stringify_keys.merge(attrs.to_h.deep_stringify_keys)
+        ComputeVM.new(self, attrs)
       end
     end
 

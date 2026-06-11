@@ -29,11 +29,36 @@ module ForemanOpentofu
     end
 
     def normalize_collection_input(collection, value)
-      return nested_attributes_for(collection, value) if value.is_a?(Hash) || value.is_a?(ActionController::Parameters)
+      return normalize_nested_hash_collection(collection, value) if value.is_a?(Hash) || value.is_a?(ActionController::Parameters)
 
       Array(value).map do |entry|
         entry.respond_to?(:deep_symbolize_keys) ? entry.deep_symbolize_keys : entry
       end
+    end
+
+    def normalize_nested_hash_collection(collection, value)
+      values = (value.respond_to?(:to_unsafe_h) ? value.to_unsafe_h : value.to_h).deep_stringify_keys
+      values.delete("new_#{collection}")
+
+      values.sort_by { |key, _| key.to_s.sub('new_', '').to_i }.filter_map do |_, val|
+        normalized = normalize_nested_collection_value(val)
+        next if normalized.is_a?(Hash) && normalized[:_delete] == '1' && normalized[:id].blank?
+
+        normalized
+      end
+    end
+
+    def normalize_nested_collection_value(value)
+      normalized =
+        if value.is_a?(ActionController::Parameters) && value.respond_to?(:to_unsafe_h)
+          value.to_unsafe_h
+        elsif value.respond_to?(:to_h)
+          value.to_h
+        else
+          value
+        end
+
+      normalized.respond_to?(:deep_symbolize_keys) ? normalized.deep_symbolize_keys : normalized
     end
 
     def prefill_mandatory_attributes(args)

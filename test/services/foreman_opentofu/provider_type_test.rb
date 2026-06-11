@@ -1,3 +1,5 @@
+require 'test_plugin_helper'
+
 module ForemanOpentofu
   class ProviderTypeTest < ActiveSupport::TestCase
     # FIXME: use a non-existing ProviderType and stub the CR_ATTRS instead
@@ -258,6 +260,14 @@ module ForemanOpentofu
         provider_type.recreate_type_allow_list = %w[allowed allowed-2]
         assert_equal [{ 'type' => 'ignored' }], provider_type.filter_resource_changes([{ 'type' => 'allowed' }, { 'type' => 'ignored' }])
       end
+    end
+
+    test 'hetzner marks disk renderer as collection-based' do
+      assert ProviderTypeManager.find('hetzner').disk_renderer_collection?
+    end
+
+    test 'provider type defaults to non-collection disk rendering' do
+      assert_not ProviderType.new('custom').disk_renderer_collection?
     end
   end
 end

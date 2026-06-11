@@ -97,6 +97,8 @@ module ForemanOpentofu
       end
 
       def build_disks
+        return rendered_disk(0, disk_render_source.first).to_s if disk_renderer_collection?
+
         disk_render_source.each_with_index.filter_map do |disk, index|
           # drop removed disks; tofu will drop them automatically, if they are no longer defined
           next if disk.respond_to?(:[]) && disk['_delete'].to_i == 1
@@ -150,6 +152,15 @@ module ForemanOpentofu
         else
           to_hcl(data, snippet: true)
         end
+      end
+
+      def disk_renderer_collection?
+        return false unless @compute_resource.respond_to?(:tofu_provider)
+
+        provider = @compute_resource.tofu_provider
+        provider.respond_to?(:disk_renderer_collection?) && provider.disk_renderer_collection?
+      rescue StandardError
+        false
       end
     end
   end

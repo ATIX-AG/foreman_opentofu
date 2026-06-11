@@ -1,2 +1,4 @@
-<%= render :partial => provider_partial(compute_resource, "dynamic_attrs"), :locals => { f: f, attrs: compute_resource.tofu_provider.attributes('disk'), compute_resource: compute_resource } %>
-
+<% index = f.index.present? ? f.index : 0 %>
+<%= field_set_tag _("Volume"), :id => "volume_#{index}" do %>
+  <%= render :partial => provider_partial(compute_resource, "dynamic_attrs"), :locals => { f: f, attrs: compute_resource.tofu_provider.attributes('disk'), compute_resource: compute_resource } %>
+<% end %>
