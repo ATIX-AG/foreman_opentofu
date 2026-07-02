@@ -55,7 +55,7 @@ ForemanOpentofu::ProviderTypeManager.register('nutanix') do
   self.disk_renderer = proc do |disk|
     {
       disk_list: {
-        disk_size_mib: disk[:size_gb] * 1024,
+        disk_size_mib: disk[:size_gb].to_i * 1024,
         storage_config: {
           storage_container_reference: {
             kind: 'storage_container',
