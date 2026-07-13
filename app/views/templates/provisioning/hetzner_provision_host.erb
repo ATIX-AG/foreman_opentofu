@@ -30,11 +30,9 @@ data "hcloud_ssh_key" "deploy_key" {
 }
 <%- end %>
 
-# Create a new server running debian
+# Create a new server
 resource "hcloud_server" "node1" {
   name        = "<%= @host_name %>"
-  # image       = "debian-12"
-  # server_type = "cx23"
 
   <%= vm_attributes(['name', 'image']) %>
 
@@ -78,17 +76,4 @@ output "vm_attrs" {
       }, {})
 }
 }
-
-<% else %>
-# # get available images
-# data "hcloud_images" "all" {}
-# output "images" {
-#   value = data.hcloud_images.all.images
-# }
-#
-# # get available server types
-# data "hcloud_server_types" "all" {}
-# output "server_types" {
-#   value = data.hcloud_server_types.all.server_types
-# }
 <% end %>
