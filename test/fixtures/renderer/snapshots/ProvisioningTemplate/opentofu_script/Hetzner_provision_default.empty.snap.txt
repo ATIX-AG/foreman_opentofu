@@ -22,11 +22,9 @@ provider "hcloud" {
 
 
 
-# Create a new server running debian
+# Create a new server
 resource "hcloud_server" "node1" {
   name        = "empty"
-  # image       = "debian-12"
-  # server_type = "cx23"
 
   
 
@@ -71,5 +69,4 @@ output "vm_attrs" {
       }, {})
 }
 }
-
 
