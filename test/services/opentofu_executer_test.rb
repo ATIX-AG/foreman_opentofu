@@ -1,5 +1,4 @@
 require 'test_helper'
-require 'minitest/stub_const'
 
 module ForemanOpentofu
   class OpentofuExecuterTest < ActiveSupport::TestCase
@@ -108,6 +107,34 @@ module ForemanOpentofu
         @compute_resource.tofu_provider.expects(:filter_resource_changes).with([]).returns([])
 
         assert_not_nil @executor.run_create(raise_if_recreate: true)
+      end
+    end
+
+    test '#run_create destroys created resources when apply fails' do
+      stub_opentofu_tmp_dir do
+        tf_state = FactoryBot.create(:tf_state, name: 'vm-1')
+        failure = RuntimeError.new('apply failed')
+
+        @app_mock.expects(:apply).raises(failure)
+        @app_mock.expects(:destroy)
+
+        error = assert_raises(RuntimeError) { @executor.run_create }
+        assert_equal 'apply failed', error.message
+        assert_nil ForemanOpentofu::TfState.find_by(id: tf_state.id)
+      end
+    end
+
+    test '#run_create includes cleanup failure when destroy also fails' do
+      stub_opentofu_tmp_dir do
+        failure = RuntimeError.new('apply failed')
+
+        @app_mock.expects(:apply).raises(failure)
+        @app_mock.expects(:destroy).raises(RuntimeError.new('destroy failed'))
+        Rails.logger.expects(:error).with(regexp_matches(/Removing OpenTofu resource after host create.*destroy failed/))
+
+        error = assert_raises(RuntimeError) { @executor.run_create }
+        assert_match(/apply failed/, error.message)
+        assert_match(/Removing resource after failed host creation also failed: destroy failed/, error.message)
       end
     end
 

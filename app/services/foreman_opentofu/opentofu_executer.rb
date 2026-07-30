@@ -80,10 +80,14 @@ module ForemanOpentofu
           tofu.plan
           raise 'OpenTofu planned to re-create a resource; action aborted (check logs for details)!' if plan_wants_recreate? tofu.show_plan
         end
-        tofu.apply
-        attrs = tofu.output('vm_attrs')
-        ForemanOpentofu::TfState.find_by(name: @cr_attrs['name'])&.update(uuid: attrs['identity'])
-        attrs
+        begin
+          tofu.apply
+          attrs = tofu.output('vm_attrs')
+          ForemanOpentofu::TfState.find_by(name: @cr_attrs['name'])&.update(uuid: attrs['identity'])
+          attrs
+        rescue StandardError => e
+          handle_failed_create(tofu, e)
+        end
       end
     end
 
@@ -176,6 +180,23 @@ module ForemanOpentofu
         return true
       end
       false
+    end
+
+    def handle_failed_create(tofu, error)
+      tofu.destroy
+      ForemanOpentofu::TfState.find_by(name: @cr_attrs['name'])&.destroy
+      raise error
+    rescue StandardError => e
+      raise if e.equal?(error)
+
+      Rails.logger.error(
+        "Removing OpenTofu resource after host create for #{@cr_attrs['name']} failed: #{e.message}"
+      )
+      wrapped_error = error.exception(
+        "#{error.message}\n Removing resource after failed host creation also failed: #{e.message}"
+      )
+      wrapped_error.set_backtrace(error.backtrace)
+      raise wrapped_error
     end
   end
 end
