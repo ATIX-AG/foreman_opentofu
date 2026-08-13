@@ -97,6 +97,16 @@ module ForemanOpentofu
                 'address' => 'updated',
               },
               {
+                'change' => { 'actions' => ['create'] },
+                'type' => 'something',
+                'address' => 'added',
+              },
+              {
+                'change' => { 'actions' => ['delete'] },
+                'type' => 'something',
+                'address' => 'removed',
+              },
+              {
                 'type' => 'nothing',
                 'address' => 'unchanged',
               },
