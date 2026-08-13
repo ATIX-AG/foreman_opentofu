@@ -160,7 +160,10 @@ module ForemanOpentofu
     end
 
     def plan_wants_recreate?(plan)
-      need_recreate = plan['resource_changes'].select { |res| (res.dig('change', 'actions') || []).include?('delete') }
+      need_recreate = plan['resource_changes'].select do |res|
+        actions = res.dig('change', 'actions') || []
+        actions.include?('delete') && actions.include?('create')
+      end
       need_recreate = @compute_resource.tofu_provider.filter_resource_changes need_recreate
       # {
       #   "address": "hcloud_server.node1",
