@@ -28,7 +28,7 @@ module ForemanOpentofu
         args = default_attributes.merge(args).to_h.symbolize_keys
         normalize_vm_args_collections!(args)
         executor = client(args)
-        output = executor.run_create
+        output = executor.run_create(cleanup_on_failure: true)
         ComputeVM.new(self, output)
       end
     end

@@ -73,7 +73,7 @@ module ForemanOpentofu
       run('test', &:plan)
     end
 
-    def run_create(raise_if_recreate: false)
+    def run_create(raise_if_recreate: false, cleanup_on_failure: false)
       run('create') do |tofu|
         if raise_if_recreate
           # check the plan in advance to verify we do not replace the VM
@@ -86,6 +86,8 @@ module ForemanOpentofu
           ForemanOpentofu::TfState.find_by(name: @cr_attrs['name'])&.update(uuid: attrs['identity'])
           attrs
         rescue StandardError => e
+          raise e unless cleanup_on_failure
+
           handle_failed_create(tofu, e)
         end
       end

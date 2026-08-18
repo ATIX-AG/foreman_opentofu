@@ -122,15 +122,31 @@ module ForemanOpentofu
 
     test '#run_create destroys created resources when apply fails' do
       stub_opentofu_tmp_dir do
-        tf_state = FactoryBot.create(:tf_state, name: 'vm-1')
         failure = RuntimeError.new('apply failed')
 
         @app_mock.expects(:apply).raises(failure)
-        @app_mock.expects(:destroy)
+        @app_mock.expects(:destroy).returns do
+          FactoryBot.create(:tf_state, name: 'vm-1', uuid: 'uuid-1')
+          nil
+        end
+
+        error = assert_raises(RuntimeError) { @executor.run_create(cleanup_on_failure: true) }
+        assert_equal 'apply failed', error.message
+        assert_nil ForemanOpentofu::TfState.find_by(name: 'vm-1')
+      end
+    end
+
+    test '#run_create does not destroy existing resources when apply fails during update' do
+      stub_opentofu_tmp_dir do
+        tf_state = FactoryBot.create(:tf_state, name: 'vm-1', uuid: 'uuid-1')
+        failure = RuntimeError.new('apply failed')
+
+        @app_mock.expects(:apply).raises(failure)
+        @app_mock.expects(:destroy).never
 
         error = assert_raises(RuntimeError) { @executor.run_create }
         assert_equal 'apply failed', error.message
-        assert_nil ForemanOpentofu::TfState.find_by(id: tf_state.id)
+        assert_equal tf_state.id, ForemanOpentofu::TfState.find_by(name: 'vm-1')&.id
       end
     end
 
@@ -142,7 +158,7 @@ module ForemanOpentofu
         @app_mock.expects(:destroy).raises(RuntimeError.new('destroy failed'))
         Rails.logger.expects(:error).with(regexp_matches(/Removing OpenTofu resource after host create.*destroy failed/))
 
-        error = assert_raises(RuntimeError) { @executor.run_create }
+        error = assert_raises(RuntimeError) { @executor.run_create(cleanup_on_failure: true) }
         assert_match(/apply failed/, error.message)
         assert_match(/Removing resource after failed host creation also failed: destroy failed/, error.message)
       end

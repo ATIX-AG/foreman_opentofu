@@ -56,7 +56,7 @@ module ForemanOpentofu
 
     context '#create_vm' do
       test 'returns ComputeVM' do
-        @executor.stubs(:run_create).returns({ 'id' => 'vm1' })
+        @executor.stubs(:run_create).with(cleanup_on_failure: true).returns({ 'id' => 'vm1' })
 
         vm = @nutanix_cr.create_vm('name' => 'vm1')
 
@@ -69,7 +69,7 @@ module ForemanOpentofu
           captured_args = args
           true
         end.returns(@executor)
-        @executor.stubs(:run_create).returns({ 'id' => 'vm1' })
+        @executor.stubs(:run_create).with(cleanup_on_failure: true).returns({ 'id' => 'vm1' })
 
         @nutanix_cr.create_vm(
           'name' => 'vm1',
@@ -96,7 +96,7 @@ module ForemanOpentofu
           captured_args = args
           true
         end.returns(@executor)
-        @executor.stubs(:run_create).returns({ 'id' => 'vm1' })
+        @executor.stubs(:run_create).with(cleanup_on_failure: true).returns({ 'id' => 'vm1' })
 
         @nutanix_cr.create_vm(
           'name' => 'vm1',
@@ -126,7 +126,7 @@ module ForemanOpentofu
       end
 
       test 'wraps exceptions' do
-        @executor.stubs(:run_create).raises(StandardError.new('boom'))
+        @executor.stubs(:run_create).with(cleanup_on_failure: true).raises(StandardError.new('boom'))
 
         assert_raises(Foreman::WrappedException) do
           @nutanix_cr.create_vm('name' => 'vm1')
