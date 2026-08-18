@@ -23,6 +23,28 @@ module ForemanOpentofu
       end
     end
 
+    test '#find_vm_by_uuid keeps volumes with id' do
+      FactoryBot.create(:tf_state)
+      @executor.stubs(:run_output).returns({
+        'id' => 'vm-1',
+        'volumes_attributes' => { '0' => { 'name' => 'voo', 'id' => 123 } },
+      })
+      vm = @nutanix_cr.find_vm_by_uuid('uuid-1')
+      assert_instance_of ComputeVM, vm
+      assert_not_empty vm['volumes_attributes']
+    end
+
+    test '#find_vm_by_uuid removes volumes without id' do
+      FactoryBot.create(:tf_state)
+      @executor.stubs(:run_output).returns({
+        'id' => 'vm-1',
+        'volumes_attributes' => { '0' => { 'name' => 'voo', 'id' => nil } },
+      })
+      vm = @nutanix_cr.find_vm_by_uuid('uuid-1')
+      assert_instance_of ComputeVM, vm
+      assert_empty vm['volumes_attributes']
+    end
+
     context '#new_vm' do
       setup do
         @executor.stubs(:run_fetch)
