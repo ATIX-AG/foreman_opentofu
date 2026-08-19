@@ -6,6 +6,8 @@ module ForemanOpentofu
       vm_command_errors('find vm') do
         tf_state = ForemanOpentofu::TfState.find_by(uuid: uuid)
         data = client({ 'name' => tf_state&.name }).run_output
+        # trying to add a volume with invalid parameter may persist in the volumes_attributes-hash
+        data['volumes_attributes'] = data['volumes_attributes']&.delete_if { |_idx, vol| vol.key?('id') && vol['id'].nil? }
         ComputeVM.new(self, data)
       end
     end
