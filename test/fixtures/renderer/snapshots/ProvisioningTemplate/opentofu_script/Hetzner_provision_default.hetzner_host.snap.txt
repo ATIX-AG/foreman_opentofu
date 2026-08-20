@@ -61,7 +61,7 @@ output "vm_attrs" {
       vm_ip6_address = hcloud_server.node1.ipv6_address
       vm = hcloud_server.node1
       volumes_attributes = try({
-        for k, v in try(local.disks, {}) : tostring(try(v.id, k)) => {
+        for k, v in try(hcloud_volume.volumes, {}) : tostring(try(v.id, k)) => {
           id = try(v.id, null)
           name = try(v.name, "volume-${k}")
           size = try(v.size, 20)
@@ -69,6 +69,6 @@ output "vm_attrs" {
           format = try(v.format, null)
         } if try(v["_delete"], "0") != "1"
       }, {})
-}
+  }
 }
 
