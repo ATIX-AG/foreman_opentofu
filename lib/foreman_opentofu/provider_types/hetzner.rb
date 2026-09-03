@@ -4,6 +4,7 @@ require "#{ForemanOpentofu::Engine.root}/app/services/foreman_opentofu/provider_
 
 ForemanOpentofu::ProviderTypeManager.register('hetzner') do
   @capabilities = [:image, :key_pair, :power_status_only]
+  self.default_template = 'Hetzner provision default'
 
   def disk_renderer_collection?
     true
@@ -45,6 +46,10 @@ ForemanOpentofu::ProviderTypeManager.register('hetzner') do
       [idx.to_s, { network_id: nic[:network_id].to_s }]
     end
   end
+
+  self.connection_attrs = [
+    { name: 'password', type: 'password', mandatory: true, label: 'Token' },
+  ]
 
   self.provider_attrs = [
     { name: 'server_type', type: 'select', group: 'vm', mandatory: true,
