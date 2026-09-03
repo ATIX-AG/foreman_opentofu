@@ -5,6 +5,13 @@ require "#{ForemanOpentofu::Engine.root}/app/services/foreman_opentofu/provider_
 ForemanOpentofu::ProviderTypeManager.register('nutanix') do
   # FIXME: Requires Nutanix-server that supports v2-API (see 'available_images')
   # @capabilities = [:build, :image]
+  self.default_template = 'Nutanix provision default'
+
+  self.connection_attrs = [
+    { name: 'url', type: 'string', mandatory: true, label: 'Endpoint', help_block: '127.0.0.1' },
+    { name: 'user', type: 'string', mandatory: true, label: 'Username', help_block: 'e.g. admin' },
+    { name: 'password', type: 'password', mandatory: true, label: 'Password' },
+  ]
 
   self.provider_attrs = [
     { "name": 'cluster_uuid', "type": 'select', "group": 'vm', "mandatory": true,

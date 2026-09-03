@@ -47,6 +47,7 @@ module ForemanOpentofu
     # Include concerns in this config.to_prepare block
     config.to_prepare do
       ::ComputeResourcesController.include ForemanOpentofu::Controller::Parameters::ComputeResource
+      ::ComputeResourcesController.include ForemanOpentofu::ComputeResourcesController
       ::Api::V2::ComputeResourcesController.include ForemanOpentofu::Controller::Parameters::ComputeResource
       ::ComputeResourcesVmsController.include ForemanOpentofu::ComputeResourcesVmsController
       ::Host::Managed.include Orchestration::Tofu::Compute

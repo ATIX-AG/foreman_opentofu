@@ -98,6 +98,28 @@ module ForemanOpentofu
       assert_equal 'nutanix_sockets', attrs.first['options'][:data_source][:name]
     end
 
+    test 'connection_attrs converts input to HashWithIndifferentAccess' do
+      provider_type1 = ForemanOpentofu::ProviderType.new(provider_type.id)
+      provider_type1.connection_attrs = [{ name: 'password', type: 'password', mandatory: true }]
+
+      attribute = provider_type1.connection_attrs.first
+
+      assert_instance_of ActiveSupport::HashWithIndifferentAccess, attribute
+      assert_equal 'password', attribute[:name]
+      assert attribute['mandatory']
+    end
+
+    test 'providers define their required connection attributes' do
+      assert_equal %w[url user password], (provider_type.connection_attrs.map { |attribute| attribute['name'] })
+      assert_equal ['password'], (ProviderTypeManager.find('hetzner').connection_attrs.map { |attribute| attribute['name'] })
+    end
+
+    test 'providers define their default templates' do
+      assert_equal 'Nutanix provision default', provider_type.default_template
+      assert_equal 'Hetzner provision default', ProviderTypeManager.find('hetzner').default_template
+      assert_equal 'oVirt provision default', ProviderTypeManager.find('ovirt').default_template
+    end
+
     test 'no available_attributes raises' do
       provider_type.expects(:attributes?).returns(false)
 

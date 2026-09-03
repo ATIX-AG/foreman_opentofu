@@ -1,9 +1,26 @@
 <%= field_set_tag _("Common fields"), :id => "compute_ressource_common_field_set" do %>
-  <%= select_f f, :opentofu_provider, ForemanOpentofu::ProviderTypeManager.enabled_provider_types, :id, :name, {}, {:label => _("OpenTofu Provider")} %>
+  <%= select_f f,
+               :opentofu_provider,
+               ForemanOpentofu::ProviderTypeManager.enabled_provider_types,
+               :id,
+               :name,
+               { :include_blank => @compute_resource.opentofu_provider.blank? ? _("Choose a provider") : false },
+               {
+                 label: _("OpenTofu Provider"),
+                 onchange: "tfm.computeResource.providerSelected(this)",
+                 data: {
+                   url: provider_selected_compute_resources_path(
+                     opentofu_provider_selected: true
+                   )
+                 }
+               } %>
   <%= select_f f, :opentofu_template_id, ProvisioningTemplate.of_kind('opentofu_script'), :id, :name, {}, {:label => _("OpenTofu Template")} %>
-  <%= text_f f, :url, :help_block => _("127.0.0.1") %>
-  <%= text_f f, :user , :help_block => _("e.g. admin") %>
-  <%= password_f f, :password, :unset => unset_password? %>
+  <%= render :partial => provider_partial(@compute_resource, "dynamic_attrs"), :locals => {
+    f: f,
+    attrs: @compute_resource.tofu_provider&.connection_attrs || [],
+    compute_resource: @compute_resource,
+    unset_password: unset_password?,
+  } %>
   <%= checkbox_f f, :caching_enabled, :label => _("Enable caching"),
                  :help_inline => _("Cache slow calls to OpenTofu Compute resources to speed up page rendering") %>
 

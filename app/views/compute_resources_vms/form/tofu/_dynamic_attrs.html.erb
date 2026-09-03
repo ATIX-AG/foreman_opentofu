@@ -3,12 +3,15 @@
   common_options = {
     label: _(label),
     label_help: attr['help'],
+    help_block: attr['help_block'],
     required: attr['mandatory'],
-  } %>
+  }.compact %>
 
   <% case attr['type'] %>
   <% when 'string' %>
     <%= text_f f, attr['name'].to_sym, common_options %>
+  <% when 'password' %>
+    <%= password_f f, attr['name'].to_sym, common_options.merge(unset: local_assigns.fetch(:unset_password, false)) %>
   <% when 'bool' %>
     <%= checkbox_f f, attr['name'].to_sym, common_options %>
   <% when 'number' %>

@@ -1,20 +1,24 @@
 module ForemanOpentofu
   class ProviderType
-    attr_reader :id, :name, :default_attributes, :default_interfaces, :default_volumes
+    attr_reader :id, :name, :default_attributes, :default_interfaces, :default_volumes,
+      :connection_attrs
     attr_accessor :capabilities, :disk_renderer, :nic_renderer,
-      :recreate_type_allow_list
+      :recreate_type_allow_list, :default_template
 
     def initialize(id)
       @id = id.to_sym
       @name = id.capitalize
       @capabilities = [:build]
       @provider_attrs = []
+      @connection_attrs = []
     end
 
     def provider_attrs=(input)
-      @provider_attrs = Array(input).map do |attr|
-        ActiveSupport::HashWithIndifferentAccess.new(attr)
-      end
+      @provider_attrs = normalize_attributes(input)
+    end
+
+    def connection_attrs=(input)
+      @connection_attrs = normalize_attributes(input)
     end
 
     # if necessary, select-parameter named 'available_images' must be specified!
@@ -124,6 +128,14 @@ module ForemanOpentofu
     # instead of one resource block per disk entry.
     def disk_renderer_collection?
       false
+    end
+
+    private
+
+    def normalize_attributes(input)
+      Array(input).map do |attr|
+        ActiveSupport::HashWithIndifferentAccess.new(attr)
+      end
     end
   end
 end
