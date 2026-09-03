@@ -21,9 +21,9 @@ module ForemanOpentofu
     include ComputeResourceCaching
     include KeyPairComputeResource
     validates :provider, presence: true, inclusion: { in: %w[Tofu] }
-    validates :url, presence: true
-    validates :user, presence: true
-    validates :password, presence: true
+    validates :url, presence: true, if: -> { mandatory_compute_resource_attribute?('url') }
+    validates :user, presence: true, if: -> { mandatory_compute_resource_attribute?('user') }
+    validates :password, presence: true, if: -> { mandatory_compute_resource_attribute?('password') }
 
     # alias_attribute :username, :user
     # alias_attribute :endpoint, :url
@@ -67,9 +67,11 @@ module ForemanOpentofu
     end
 
     def opentofu_template
-      return ProvisioningTemplate.find(attrs[:opentofu_template_id]) if attrs.key? :opentofu_template_id
-      # or default-template for this opentofu_provider
-      nil
+      return ProvisioningTemplate.find(attrs[:opentofu_template_id]) if attrs[:opentofu_template_id].present?
+
+      ProvisioningTemplate.unscoped.find_by!(
+        name: tofu_provider.default_template
+      )
     end
 
     def opentofu_template_id
@@ -147,6 +149,12 @@ module ForemanOpentofu
     end
 
     private
+
+    def mandatory_compute_resource_attribute?(name)
+      tofu_provider&.connection_attrs&.any? do |attribute|
+        attribute['name'] == name && attribute['mandatory']
+      end
+    end
 
     def set_vm_volumes_attributes(vm, vm_attrs)
       volumes = if vm.respond_to?(:volumes_attributes)

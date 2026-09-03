@@ -6,10 +6,12 @@
   <td><%= _('OpenTofu Template') %></td>
   <td><%= link_to @compute_resource.opentofu_template, edit_provisioning_template_path(@compute_resource.opentofu_template) %></td>
 </tr>
-<tr>
-  <td><%= _('URL') %></td>
-  <td><%= @compute_resource.url %></td>
-</tr>
+<% if @compute_resource.url.present? %>
+  <tr>
+    <td><%= _('URL') %></td>
+    <td><%= @compute_resource.url %></td>
+  </tr>
+<% end %>
 <tr>
   <td><%= _("Caching") %></td>
   <td><%= @compute_resource.caching_enabled ? _("Enabled") : _("Disabled") %></td>

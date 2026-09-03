@@ -31,10 +31,22 @@ class TofuTest < ActiveSupport::TestCase
     assert_respond_to subject, :opentofu_template
   end
 
-  test 'not assigned template returns nil' do
+  test 'missing provider default template raises' do
     assert_not_include subject.attrs, :opentofu_template_id
+    templates = mock
+    ProvisioningTemplate.expects(:unscoped).returns(templates)
+    templates.expects(:find_by!).with(name: 'Nutanix provision default').raises(ActiveRecord::RecordNotFound)
 
-    assert_nil subject.opentofu_template
+    assert_raises(ActiveRecord::RecordNotFound) { subject.opentofu_template }
+  end
+
+  test 'uses the provider default template when none is assigned' do
+    template = mock
+    templates = mock
+    ProvisioningTemplate.expects(:unscoped).returns(templates)
+    templates.expects(:find_by!).with(name: 'Nutanix provision default').returns(template)
+
+    assert_equal template, subject.opentofu_template
   end
 
   test 'has tofu-template' do
@@ -47,6 +59,17 @@ class TofuTest < ActiveSupport::TestCase
   test 'has tofu provider' do
     assert_instance_of Symbol, subject.opentofu_provider
     assert_instance_of ForemanOpentofu::ProviderType, subject.tofu_provider
+  end
+
+  test 'validates only connection attributes required by provider' do
+    nutanix = FactoryBot.build(:opentofu_nutanix_cr, url: nil, user: nil, password: nil)
+    assert_not nutanix.valid?
+    assert_includes nutanix.errors[:url], "can't be blank"
+    assert_includes nutanix.errors[:user], "can't be blank"
+    assert_includes nutanix.errors[:password], "can't be blank"
+
+    hetzner = FactoryBot.build(:opentofu_hetzner_cr, url: nil, user: nil)
+    assert hetzner.valid?
   end
 
   test 'delegates available_attributes to opentofu-provider' do
