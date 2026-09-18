@@ -117,7 +117,6 @@ module ForemanOpentofu
     test 'providers define their default templates' do
       assert_equal 'Nutanix provision default', provider_type.default_template
       assert_equal 'Hetzner provision default', ProviderTypeManager.find('hetzner').default_template
-      assert_equal 'oVirt provision default', ProviderTypeManager.find('ovirt').default_template
     end
 
     test 'no available_attributes raises' do

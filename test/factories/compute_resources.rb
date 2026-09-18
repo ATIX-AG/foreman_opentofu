@@ -17,18 +17,10 @@ FactoryBot.modify do
       # uuid { 'vdatacenter' } # alias for datacenter
       # after(:build) { |cr| cr.stubs(:update_public_key) }
     end
-
-    trait :opentofu_ovirt do
-      opentofu_provider { :ovirt }
-      user { 'ovuser' }
-      password { 'ovpassword' }
-      sequence(:url) { |n| "#{n}.example.com" }
-    end
   end
 end
 
 FactoryBot.define do
   factory :opentofu_hetzner_cr, parent: :compute_resource, class: ForemanOpentofu::Tofu, traits: [:opentofu_hetzner]
   factory :opentofu_nutanix_cr, parent: :compute_resource, class: ForemanOpentofu::Tofu, traits: [:opentofu_nutanix]
-  factory :opentofu_ovirt_cr, parent: :compute_resource, class: ForemanOpentofu::Tofu, traits: [:opentofu_ovirt]
 end
