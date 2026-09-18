@@ -1,5 +1,12 @@
 ForemanOpentofu::ProviderTypeManager.register('ovirt') do
   @capabilities = [:build]
+  self.default_template = 'oVirt provision default'
+
+  self.connection_attrs = [
+    { name: 'url', type: 'string', mandatory: true, label: 'URL' },
+    { name: 'user', type: 'string', mandatory: true, label: 'Username' },
+    { name: 'password', type: 'password', mandatory: true, label: 'Password' },
+  ]
 
   self.provider_attrs = [
     { "name": 'clone', "type": 'bool', "group": 'vm' },

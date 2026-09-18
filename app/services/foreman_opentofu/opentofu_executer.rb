@@ -3,6 +3,11 @@ module ForemanOpentofu
     # 'destroy' works with TfState rather than the actual tf-file
     # also it might not receive all the necessary data to create a valid tf-file
     DRY_RUN_MODES = %w[destroy test].freeze
+    PROVIDER_VARIABLE_NAMES = {
+      'url' => :endpoint,
+      'user' => :username,
+      'password' => :password,
+    }.freeze
 
     def initialize(compute_resource, args = {})
       @compute_resource = compute_resource
@@ -21,11 +26,7 @@ module ForemanOpentofu
             f.write(@cr_attrs['user_data'])
           end
         end
-        tofu = AppWrapper.new(dir, variables: {
-          username: @compute_resource.user,
-          password: @compute_resource.password,
-          endpoint: @compute_resource.url,
-        })
+        tofu = AppWrapper.new(dir, variables: provider_variables)
         @use_backend = %w[create destroy output keygen].include?(mode)
         @token = create_token(@host_name) if @use_backend
         tofu.main_configuration = render_template(mode)
@@ -123,6 +124,16 @@ module ForemanOpentofu
     end
 
     private
+
+    def provider_variables
+      @compute_resource.tofu_provider.connection_attrs.each_with_object({}) do |attribute, variables|
+        attribute_name = attribute['name'].to_s
+        variable_name = PROVIDER_VARIABLE_NAMES[attribute_name]
+        next unless variable_name
+
+        variables[variable_name] = @compute_resource.public_send(attribute_name)
+      end
+    end
 
     def render_template(mode)
       template = provision_template

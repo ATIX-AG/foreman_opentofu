@@ -193,6 +193,46 @@ module ForemanOpentofu
       end
     end
 
+    test '#run passes all connection variables for Nutanix' do
+      expected_variables = {
+        username: @compute_resource.user,
+        password: @compute_resource.password,
+        endpoint: @compute_resource.url,
+      }
+      AppWrapper.expects(:new).with(kind_of(String), variables: expected_variables).returns(@app_mock)
+
+      stub_opentofu_tmp_dir do
+        @executor.run_test_connection
+      end
+    end
+
+    test '#run passes all connection variables for oVirt' do
+      compute_resource = FactoryBot.build_stubbed(:opentofu_ovirt_cr)
+      executor = OpentofuExecuter.new(compute_resource)
+      executor.stubs(:render_template).returns('rendered template')
+      expected_variables = {
+        username: compute_resource.user,
+        password: compute_resource.password,
+        endpoint: compute_resource.url,
+      }
+      AppWrapper.expects(:new).with(kind_of(String), variables: expected_variables).returns(@app_mock)
+
+      stub_opentofu_tmp_dir do
+        executor.run_test_connection
+      end
+    end
+
+    test '#run passes only the password variable for Hetzner' do
+      compute_resource = FactoryBot.build_stubbed(:opentofu_hetzner_cr)
+      executor = OpentofuExecuter.new(compute_resource)
+      executor.stubs(:render_template).returns('rendered template')
+      AppWrapper.expects(:new).with(kind_of(String), variables: { password: compute_resource.password }).returns(@app_mock)
+
+      stub_opentofu_tmp_dir do
+        executor.run_test_connection
+      end
+    end
+
     test '#run creates user_data file' do
       stub_opentofu_tmp_dir do
         executor = OpentofuExecuter.new(@compute_resource, { 'user_data' => 'HelloWorld' })
