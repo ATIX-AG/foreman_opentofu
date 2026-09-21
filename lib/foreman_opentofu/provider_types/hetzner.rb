@@ -22,6 +22,18 @@ ForemanOpentofu::ProviderTypeManager.register('hetzner') do
     true
   end
 
+  def validate_provider_specific!(attrs, compute_resource)
+    disks = active_volumes(attrs, compute_resource)
+    raise ArgumentError, _('Hetzner allows at most 16 volumes per server.') if disks.size > 16
+
+    disks.each { |disk| validate_volume!(disk) }
+  end
+
+  def validate_volume!(disk)
+    raise ArgumentError, _('Hetzner volume format is required when automount is enabled.') if Foreman::Cast.to_bool(disk[:automount]) && disk[:format].blank?
+    raise ArgumentError, _('Hetzner volume format must be ext4 or xfs.') if disk[:format].present? && !%w[ext4 xfs].include?(disk[:format])
+  end
+
   def normalize_interfaces(vm_attrs)
     attrs = vm_attrs.with_indifferent_access
     return attrs if attrs[:interfaces_attributes].present?
@@ -88,7 +100,8 @@ ForemanOpentofu::ProviderTypeManager.register('hetzner') do
     { name: 'name', type: 'string', group: 'disk', mandatory: true,
       label: 'Volume Name' },
     { name: 'size', type: 'number', group: 'disk', mandatory: true,
-      label: 'Size (GB)' },
+      label: 'Size (GB)', min: 10, max: 10_240, step: 1,
+      help: 'Volume size must be between 10 and 10240 GB.' },
     { name: 'automount', type: 'bool', group: 'disk', mandatory: false,
       label: 'Automount', help: 'Requires Format to be set.' },
     { name: 'format', type: 'select', group: 'disk', mandatory: false,

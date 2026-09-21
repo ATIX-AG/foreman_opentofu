@@ -6,6 +6,11 @@ module ForemanOpentofu
     let(:provider_type) { ProviderTypeManager.find('nutanix') }
     let(:compute_resource) { FactoryBot.create(:opentofu_nutanix_cr) }
 
+    test 'default validation accepts VM attributes' do
+      provider = ProviderType.new('custom')
+      assert_nothing_raised { provider.validate_vm!({}, nil) }
+    end
+
     test 'has name' do
       assert_not_empty provider_type.name
     end

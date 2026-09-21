@@ -46,6 +46,7 @@ module ForemanOpentofu
     config.autoload_paths << File.expand_path('../lib', __dir__)
     # Include concerns in this config.to_prepare block
     config.to_prepare do
+      ::ComputeAttribute.include ForemanOpentofu::ComputeAttributeValidation
       ::ComputeResourcesController.include ForemanOpentofu::Controller::Parameters::ComputeResource
       ::ComputeResourcesController.include ForemanOpentofu::ComputeResourcesController
       ::Api::V2::ComputeResourcesController.include ForemanOpentofu::Controller::Parameters::ComputeResource
