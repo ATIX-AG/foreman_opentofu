@@ -74,23 +74,11 @@ module ForemanOpentofu
       run('test', &:plan)
     end
 
-    def run_create(raise_if_recreate: false, cleanup_on_failure: false)
+    def run_create(raise_if_recreate: false, cleanup_on_failure: false, power_only: false)
       run('create') do |tofu|
-        if raise_if_recreate
-          # check the plan in advance to verify we do not replace the VM
-          tofu.plan
-          raise 'OpenTofu planned to re-create a resource; action aborted (check logs for details)!' if plan_wants_recreate? tofu.show_plan
-        end
-        begin
-          tofu.apply
-          attrs = tofu.output('vm_attrs')
-          ForemanOpentofu::TfState.find_by(name: @cr_attrs['name'])&.update(uuid: attrs['identity'])
-          attrs
-        rescue StandardError => e
-          raise e unless cleanup_on_failure
-
-          handle_failed_create(tofu, e)
-        end
+        validate_power_plan(tofu) if power_only
+        validate_update_plan(tofu) if raise_if_recreate
+        apply_create(tofu, cleanup_on_failure)
       end
     end
 
@@ -124,6 +112,32 @@ module ForemanOpentofu
     end
 
     private
+
+    def validate_power_plan(tofu)
+      tofu.plan
+      changes = tofu.show_plan.fetch('resource_changes', [])
+      return if changes.all? { |change| @compute_resource.tofu_provider.power_change_allowed?(change) }
+
+      raise 'OpenTofu planned changes other than server power; action aborted.'
+    end
+
+    def validate_update_plan(tofu)
+      tofu.plan
+      return unless plan_wants_recreate?(tofu.show_plan)
+
+      raise 'OpenTofu planned to re-create a resource; action aborted (check logs for details)!'
+    end
+
+    def apply_create(tofu, cleanup_on_failure)
+      tofu.apply
+      attrs = tofu.output('vm_attrs')
+      ForemanOpentofu::TfState.find_by(name: @cr_attrs['name'])&.update(uuid: attrs['identity'])
+      attrs
+    rescue StandardError => e
+      raise e unless cleanup_on_failure
+
+      handle_failed_create(tofu, e)
+    end
 
     def provider_variables
       @compute_resource.tofu_provider.connection_attrs.each_with_object({}) do |attribute, variables|

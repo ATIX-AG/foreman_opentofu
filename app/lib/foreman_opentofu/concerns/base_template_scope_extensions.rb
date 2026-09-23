@@ -64,22 +64,24 @@ module ForemanOpentofu
       end
       def vm_attributes(skip_list = [])
         available_attributes = @compute_resource.available_attributes
-        data = {}
-        res = ''
-        @cr_attrs.each do |key, value|
-          next if skip_list.include? key
+        skipped_attributes = skip_list.map(&:to_s)
+        data = @cr_attrs.each_with_object({}) do |(key, value), attributes|
+          next if skipped_attributes.include?(key.to_s)
 
-          conf = available_attributes[key]
-          if conf.nil?
+          config = available_attributes[key]
+          unless config
             Rails.logger.warn("Attribute #{key.inspect} is not supported.")
             next
           end
-          next if conf['group'] != 'vm'
-          next if value.blank? && !conf['mandatory']
+          next unless vm_attribute_included?(config, value)
 
-          data[key] = format_value(value, conf['type'])
+          attributes[key] = format_value(value, config['type'])
         end
-        res << to_hcl(data, snippet: true)
+        to_hcl(data, snippet: true)
+      end
+
+      def vm_attribute_included?(config, value)
+        config['group'] == 'vm' && (value.present? || config['mandatory'])
       end
 
       def backend_block
@@ -108,6 +110,8 @@ module ForemanOpentofu
       end
 
       def build_nics
+        return render_provider_data(@compute_resource.render_nic(nil, self, 0)) if @compute_resource.tofu_provider.nic_renderer_collection?
+
         nics_from_cr_attrs.each_with_index.map do |nic, index|
           data = @compute_resource.render_nic(nic, self, index)
           render_provider_data(data)

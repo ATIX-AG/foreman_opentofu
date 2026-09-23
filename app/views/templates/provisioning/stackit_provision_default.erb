@@ -1,0 +1,102 @@
+<%#
+kind: opentofu_script
+name: Stackit provision default
+model: ProvisioningTemplate
+description: |
+  Stackit Cloud image-based server with a boot volume, network interfaces, and optional data volumes.
+  Project ID and service account key JSON are configured on the compute resource.
+  Region is configured on the VM or compute profile (default eu01).
+-%>
+
+<%= terraform_block({ stackit: { source: 'stackitcloud/stackit', version: '= 0.115.0' } }) %>
+
+provider "stackit" {
+  enable_beta_resources = true
+  default_region      = <%= to_hcl(@cr_attrs['region'].presence || 'eu01') %>
+  service_account_key = var.password
+}
+
+<% if @resource %>
+<%= resource_block(@resource) %>
+<% elsif @keygen %>
+<%# Retained for cleanup of deployment keys created by older versions. %>
+<% if @ssh_key.present? %>
+resource "stackit_key_pair" "deploy_key" {
+  name       = <%= to_hcl(@ssh_key.name) %>
+  public_key = <%= to_hcl(@ssh_key.public_key) %>
+}
+<% end %>
+<% elsif !@dry_run %>
+locals {
+  boot_volume_size  = <%= to_hcl(format_value(@cr_attrs['boot_volume_size'].presence || 64, 'number')) %>
+  assign_public_ip  = <%= to_hcl(format_value(@cr_attrs['assign_public_ip'] || false, 'bool')) %>
+  image_id          = <%= to_hcl(@cr_attrs['image_id'].to_s) %>
+  project_id        = var.username
+}
+
+
+
+resource "stackit_server" "node1" {
+  desired_status = <%= to_hcl(@compute_resource.tofu_provider.desired_status(@cr_attrs)) %>
+  project_id = local.project_id
+  name       = <%= to_hcl(@host_name) %>
+  <%= vm_attributes(['power_state', 'region', 'project_id', 'network_id', 'security_group_id', 'boot_volume_size', 'assign_public_ip']) %>
+
+  boot_volume = {
+    source_type           = "image"
+    source_id             = local.image_id
+    size                  = local.boot_volume_size
+    delete_on_termination = true
+  }
+
+  network_interfaces = [for nic in values(stackit_network_interface.interfaces) : nic.network_interface_id]
+<% if @user_data_filename.present? %>
+  user_data = file(<%= to_hcl(@user_data_filename) %>)
+<% elsif @cr_attrs['user_data'].present? %>
+  user_data = <%= to_hcl(@cr_attrs['user_data'].gsub('${', '$${').gsub('%{', '%%{')) %>
+<% elsif @ssh_key.present? %>
+   keypair_name = "<%= @ssh_key.name %>"
+<% end %>
+}
+
+resource "stackit_public_ip" "primary" {
+  count                = local.assign_public_ip ? 1 : 0
+  project_id           = local.project_id
+  network_interface_id = values(stackit_network_interface.interfaces)[0].network_interface_id
+}
+<%= build_nics %>
+<%= build_disks %>
+
+output "vm_attrs" {
+  value = {
+    mac           = values(stackit_network_interface.interfaces)[0].mac
+    identity      = stackit_server.node1.server_id
+    vm_ip_address = local.assign_public_ip ? stackit_public_ip.primary[0].ip : values(stackit_network_interface.interfaces)[0].ipv4
+    vm = merge(stackit_server.node1, {
+      power_state       = stackit_server.node1.desired_status == "active" ? "on" : "off"
+      region            = <%= to_hcl(@cr_attrs['region'].presence || 'eu01') %>
+      image_id          = local.image_id
+      boot_volume_size  = local.boot_volume_size
+      assign_public_ip  = local.assign_public_ip
+    })
+    interfaces_attributes = {
+      for k, nic in stackit_network_interface.interfaces : k => {
+        mac               = nic.mac
+        identifier        = try(local.active_interfaces[k].identifier, "")
+        network_id        = nic.network_id
+        managed_network   = contains(keys(stackit_network.interfaces), k)
+        security_group_id = try(local.active_interfaces[k].security_group_id, "")
+      }
+    }
+    volumes_attributes = {
+      for k, volume in stackit_volume.volumes : k => {
+        id                       = volume.volume_id
+        name                     = volume.name
+        size                     = volume.size
+        volume_availability_zone = volume.availability_zone
+        performance_class        = volume.performance_class
+      }
+    }
+  }
+}
+<% end %>

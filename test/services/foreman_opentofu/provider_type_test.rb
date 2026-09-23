@@ -290,5 +290,108 @@ module ForemanOpentofu
     test 'provider type defaults to non-collection disk rendering' do
       assert_not ProviderType.new('custom').disk_renderer_collection?
     end
+
+    test 'stackit supports image provisioning and power actions without deployment keys' do
+      stackit = ProviderTypeManager.find('stackit')
+
+      assert_equal 'Stackit', stackit.name
+      assert_includes ProviderTypeManager.enabled_provider_types, stackit
+      assert_equal [:image, :key_pair], stackit.capabilities
+      assert_equal 'Stackit provision default', stackit.default_template
+      assert_equal %w[user password], (stackit.connection_attrs.map { |attribute| attribute['name'] })
+      assert_equal({ ip: :vm_ip_address, mac: :mac }, stackit.provided_attributes)
+      assert stackit.vm_ready(OpenStruct.new(ready?: true))
+      assert_not stackit.vm_ready(OpenStruct.new(ready?: false))
+      assert_equal 64, stackit.default_attributes['boot_volume_size']
+      assert_not stackit.default_attributes['assign_public_ip']
+      assert stackit.find_attr_by('name', 'region', 'vm')['mandatory']
+      assert_nil stackit.find_attr_by('name', 'project_id', 'vm')
+      assert_equal 'eu01', stackit.default_attributes['region']
+      assert_not stackit.find_attr_by('name', 'network_id')['mandatory']
+      assert_not stackit.find_attr_by('name', 'security_group_id')['mandatory']
+      assert_equal %w[network_id security_group_id], (stackit.attributes('nic').map { |attribute| attribute['name'] })
+      assert_equal %w[name size volume_availability_zone performance_class], (stackit.attributes('disk').map { |attribute| attribute['name'] })
+      assert stackit.disk_renderer_collection?
+      assert_empty stackit.available_images(nil)
+    end
+
+    test 'stackit power plans allow only server status updates' do
+      stackit = ProviderTypeManager.find('stackit')
+      change = {
+        'address' => 'stackit_server.node1',
+        'change' => {
+          'actions' => ['update'],
+          'before' => { 'desired_status' => 'active', 'machine_type' => 'g2i.1' },
+          'after' => { 'desired_status' => 'inactive', 'machine_type' => 'g2i.1' },
+        },
+      }
+      assert stackit.power_change_allowed?(change)
+      change['change']['after']['machine_type'] = 'g2i.2'
+      assert_not stackit.power_change_allowed?(change)
+      change['change']['actions'] = ['delete']
+      assert_not stackit.power_change_allowed?(change)
+      assert_not stackit.power_change_allowed?('address' => 'stackit_network.interfaces["0"]', 'change' => { 'actions' => ['delete'] })
+    end
+
+    test 'stackit accepts computed metadata becoming unknown during power updates' do
+      stackit = ProviderTypeManager.find('stackit')
+      resource = {
+        'address' => 'stackit_server.node1',
+        'change' => {
+          'actions' => ['update'],
+          'before' => {
+            'desired_status' => 'active', 'machine_type' => 'g2i.1',
+            'agent' => { 'provisioned' => true, 'provisioning_policy' => 'INHERIT' },
+            'launched_at' => '2026-09-23T10:31:25Z', 'updated_at' => '2026-09-23T10:31:25Z'
+          },
+          'after' => { 'desired_status' => 'inactive', 'machine_type' => 'g2i.1', 'agent' => nil },
+          'after_unknown' => { 'agent' => true, 'launched_at' => true, 'updated_at' => true },
+        },
+      }
+      assert stackit.power_change_allowed?(resource)
+
+      resource['change']['after']['machine_type'] = nil
+      resource['change']['after_unknown']['machine_type'] = true
+      assert_not stackit.power_change_allowed?(resource)
+    end
+
+    test 'stackit accepts nested computed agent fields but rejects a changed policy' do
+      stackit = ProviderTypeManager.find('stackit')
+      resource = {
+        'address' => 'stackit_server.node1',
+        'change' => {
+          'actions' => ['update'],
+          'before' => { 'agent' => { 'provisioned' => true, 'provisioning_policy' => 'INHERIT' } },
+          'after' => { 'agent' => { 'provisioning_policy' => 'INHERIT' } },
+          'after_unknown' => { 'agent' => { 'provisioned' => true } },
+        },
+      }
+      assert stackit.power_change_allowed?(resource)
+      resource['change']['after']['agent']['provisioning_policy'] = 'NEVER'
+      assert_not stackit.power_change_allowed?(resource)
+    end
+
+    test 'stackit matches MACs by interface identifier before network' do
+      stackit = ProviderTypeManager.find('stackit')
+      first = { 'identifier' => 'eth0', 'network_id' => 'shared', 'mac' => '02:00:00:00:00:01' }
+      second = { 'identifier' => 'eth1', 'network_id' => 'shared', 'mac' => '02:00:00:00:00:02' }
+      nic = OpenStruct.new(identifier: 'eth1', compute_attributes: { 'network_id' => 'shared' })
+      assert_equal second, stackit.select_nic_for_mac([first, second], nic)
+      nic = OpenStruct.new(identifier: 'eth2', compute_attributes: { 'network_id' => 'missing' })
+      assert_nil stackit.select_nic_for_mac([first], nic)
+    end
+
+    test 'stackit retains protection against server and network replacement' do
+      changes = [{ 'type' => 'stackit_server' }, { 'type' => 'stackit_network_interface' }]
+
+      assert_equal changes, ProviderTypeManager.find('stackit').filter_resource_changes(changes)
+    end
+
+    test 'only stackit opts out of planning during form initialization' do
+      assert ProviderType.new('custom').plan_on_new_vm?
+      assert ProviderTypeManager.find('nutanix').plan_on_new_vm?
+      assert ProviderTypeManager.find('hetzner').plan_on_new_vm?
+      assert_not ProviderTypeManager.find('stackit').plan_on_new_vm?
+    end
   end
 end
