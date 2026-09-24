@@ -23,6 +23,139 @@ module ForemanOpentofu
       Dir.unlink(app_wrapper.workdir)
     end
 
+    context '#error_summary' do
+      test 'extracts error summaries and details and excludes progress and warnings' do
+        output = [
+          { type: 'apply_start', '@message': 'Creating resources...' },
+          { type: 'diagnostic', diagnostic: { severity: 'error', summary: "First failure\ncontinued summary", detail: 'Source details' } },
+          { type: 'diagnostic', diagnostic: { severity: 'warning', summary: 'Deprecated option' } },
+          { type: 'diagnostic', diagnostic: { severity: 'error', summary: 'Second failure' } },
+        ].map(&:to_json).join("\n")
+
+        assert_equal "Error: First failure\ncontinued summary\nSource details\n\nError: Second failure",
+          app_wrapper.send(:error_summary, output)
+      end
+
+      test 'extracts diagnostics despite non-JSON lines and unrelated JSON values' do
+        output = [
+          'Startup message',
+          'null',
+          '[]',
+          '42',
+          '{}',
+          '{invalid json',
+          { type: 'diagnostic', diagnostic: nil }.to_json,
+          { type: 'diagnostic', diagnostic: { severity: 'error' } }.to_json,
+          { type: 'diagnostic', diagnostic: { severity: 'error', summary: 'Permission denied' } }.to_json,
+        ].join("\n")
+
+        assert_equal 'Error: Permission denied', app_wrapper.send(:error_summary, output)
+      end
+
+      test 'preserves JSON output without an error diagnostic' do
+        output = { type: 'diagnostic', diagnostic: { severity: 'warning', summary: 'Deprecated option' } }.to_json
+
+        assert_equal output, app_wrapper.send(:error_summary, output)
+      end
+
+      test 'preserves output without an error diagnostic' do
+        output = "Command failed\nConnection refused"
+
+        assert_equal output, app_wrapper.send(:error_summary, output)
+      end
+    end
+
+    test 'failed commands raise summaries and log readable and raw output' do
+      output = { type: 'diagnostic', '@message': 'Error: Permission denied', diagnostic: { severity: 'error', summary: 'Permission denied', detail: 'Access forbidden' } }.to_json
+      File.write(File.join(app_wrapper.workdir, 'error.json'), output)
+      Rails.logger.expects(:debug).with(output)
+      Rails.logger.expects(:error).with("Command failed with output: Error: Permission denied\nAccess forbidden")
+
+      error = assert_raises(RuntimeError) do
+        app_wrapper.send(:execute, ['sh', '-c', 'cat error.json; exit 1'])
+      end
+
+      assert_equal "Error: Permission denied\nAccess forbidden", error.message
+    end
+
+    test 'failed apply logs fixture events and raises only the error diagnostic' do
+      output = File.read(ForemanOpentofu::Engine.root.join('test', 'fixtures', 'foreman_opentofu', 'app_wrapper', 'apply_error.jsonl'))
+      readable = <<~TEXT.chomp
+        OpenTofu 1.12.6
+        hcloud_server.node1: Plan to create
+        hcloud_volume.volumes["0"]: Plan to create
+        hcloud_server.node1: Creating...
+        hcloud_server.node1: Creation complete after 24s [id=SERVER_ID]
+        hcloud_volume.volumes["0"]: Creating...
+        hcloud_volume.volumes["0"]: Creation errored after 0s
+        Warning: Value derived from a deprecated source
+        Unused attribute, consider removing it from your configuration.
+        Error: invalid input in field 'size': Must be between 10 and 10240.
+      TEXT
+      File.write(File.join(app_wrapper.workdir, 'error.jsonl'), output)
+      Rails.logger.expects(:debug).with(output)
+      Rails.logger.expects(:error).with("Command failed with output: #{readable}")
+
+      error = assert_raises(RuntimeError) do
+        app_wrapper.send(:execute, ['sh', '-c', 'cat error.jsonl; exit 1'])
+      end
+
+      assert_equal "Error: invalid input in field 'size': Must be between 10 and 10240.", error.message
+    end
+
+    test 'successful commands log readable events and preserve raw output' do
+      output = [
+        { type: 'apply_start', '@message': 'Creating resources...' },
+        { type: 'diagnostic', '@message': 'Warning: Deprecated option', diagnostic: { severity: 'warning', detail: 'Use the replacement' } },
+        { type: 'diagnostic', '@message': 'Warning without detail', diagnostic: { severity: 'warning' } },
+      ].map(&:to_json).join("\n")
+      File.write(File.join(app_wrapper.workdir, 'output.json'), output)
+      Rails.logger.expects(:debug).with(output)
+      Rails.logger.expects(:info).with(regexp_matches(/returned/))
+      Rails.logger.expects(:info).with("Creating resources...\nWarning: Deprecated option\nUse the replacement\nWarning without detail")
+
+      assert_equal output, app_wrapper.send(:execute, ['cat', 'output.json'])
+    end
+
+    test 'logs use configured parameter filters while returned output keeps original values' do
+      json = { variables: { password: { value: 'secret' }, user: { value: 'admin' }, missing: {}, invalid: nil }, format_version: '1.0' }
+      output = JSON.pretty_generate(json)
+      File.write(File.join(app_wrapper.workdir, 'variables.json'), output)
+      redacted = { variables: { password: '[FILTERED]', user: { value: '[FILTERED]' }, missing: {}, invalid: nil }, format_version: '1.0' }.to_json
+      Rails.logger.expects(:debug).with(redacted)
+      Rails.logger.expects(:info).with(regexp_matches(/returned/))
+      Rails.logger.expects(:info).with(redacted)
+
+      assert_equal output, app_wrapper.send(:execute, ['cat', 'variables.json'])
+    end
+
+    test 'failed commands filter passwords in logs while preserving the original error output' do
+      output = { variables: { password: { value: 'secret' } } }.to_json
+      redacted = { variables: { password: '[FILTERED]' } }.to_json
+      File.write(File.join(app_wrapper.workdir, 'error.json'), output)
+      Rails.logger.expects(:debug).with(redacted)
+      Rails.logger.expects(:error).with("Command failed with output: #{redacted}")
+
+      error = assert_raises(RuntimeError) do
+        app_wrapper.send(:execute, ['sh', '-c', 'cat error.json; exit 1'])
+      end
+
+      assert_equal output, error.message
+    end
+
+    test 'filters the password in mixed JSON lines and plain text' do
+      output = "Startup message\n#{{ variables: { password: { value: 'secret' } } }.to_json}\nnull\n{invalid json\n"
+      expected = "Startup message\n#{{ variables: { password: '[FILTERED]' } }.to_json}\nnull\n{invalid json\n"
+
+      assert_equal expected, app_wrapper.send(:filter_sensitive_output, output)
+    end
+
+    test 'readable output preserves plain text and unrelated JSON lines' do
+      output = "Startup failure\n{invalid json\nnull\n[]\n42\n{}\n"
+
+      assert_equal output.chomp, app_wrapper.send(:readable_output, output)
+    end
+
     test 'params parsed' do
       params = app_wrapper.send(:parse_params, ['tofu', 'init', '--json'])
       assert_kind_of(Array, params)
@@ -76,6 +209,18 @@ module ForemanOpentofu
       app_wrapper.expects(:create_variables_file).once
       app_wrapper.expects(:tofu_execute)
       app_wrapper.init
+    end
+
+    test 'plan requests JSON events and saves the plan' do
+      app_wrapper.expects(:tofu_execute).with('plan', ["-out=#{app_wrapper.planfile}", '-input=false'])
+
+      app_wrapper.plan('-input=false')
+    end
+
+    test 'destroy requests JSON events and auto approval' do
+      app_wrapper.expects(:tofu_execute).with('destroy', ['-auto-approve', '-input=false'])
+
+      app_wrapper.destroy('-input=false')
     end
 
     context 'apply()' do

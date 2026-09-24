@@ -7,7 +7,6 @@ module ForemanOpentofu
     #   - manage temp-work-dir; problem: no auto-remove after finished :-(
     #   - handle ENVVars if applicable
     #   - handle stderr and stdout separately
-    #   - use JSON-output for easier parsing
     #   - do we need locking or has the object be atomic
 
     def initialize(workdir, opts = {})
@@ -42,6 +41,7 @@ module ForemanOpentofu
     def default_params
       [
         '-no-color',
+        '-json',
       ]
     end
 
@@ -76,12 +76,12 @@ module ForemanOpentofu
     end
 
     def output(params = [])
-      JSON.parse(tofu_execute('output', ['-json'].concat(parse_params(params))))
+      tofu_execute('output', parse_params(params))
     end
 
     # TODO: find better name ;-)
     def show_plan(params = [])
-      JSON.parse(tofu_execute('show', ['-json', planfile].concat(parse_params(params))))
+      tofu_execute('show', [planfile].concat(parse_params(params)))
     end
 
     def planned?
@@ -98,12 +98,71 @@ module ForemanOpentofu
 
     private
 
+    def filter_sensitive_output(output)
+      filter_json_output(output.to_s)
+    rescue JSON::ParserError
+      output.to_s.each_line.map do |line|
+        filter_json_output(line)
+      rescue JSON::ParserError
+        line
+      end.join
+    end
+
+    def filter_json_output(output)
+      json = JSON.parse(output)
+      return output unless json.is_a?(Hash)
+
+      filtered = ActiveSupport::ParameterFilter.new(Rails.application.config.filter_parameters).filter(json)
+      return output if filtered == json
+
+      filtered.to_json + (output.end_with?("\n") ? "\n" : '')
+    end
+
+    def readable_output(output)
+      output.to_s.each_line.map do |line|
+        event = JSON.parse(line)
+        next line.chomp unless event.is_a?(Hash)
+
+        message = event.fetch('@message', line.chomp)
+        detail = event.dig('diagnostic', 'detail') if event['type'] == 'diagnostic' && event['diagnostic'].is_a?(Hash)
+        [message, detail].compact.reject(&:empty?).join("\n")
+      rescue JSON::ParserError
+        line.chomp
+      end.join("\n")
+    end
+
+    def error_summary(output)
+      errors = output.to_s.each_line.filter_map do |line|
+        diagnostic_summary(JSON.parse(line))
+      rescue JSON::ParserError
+        # stderr and startup failures may still contain plain text.
+        next
+      end
+      errors.empty? ? output : errors.join("\n\n")
+    end
+
+    def diagnostic_summary(event)
+      return unless event.is_a?(Hash) && event['type'] == 'diagnostic'
+
+      diagnostic = event['diagnostic']
+      return unless diagnostic.is_a?(Hash) && diagnostic['severity'] == 'error'
+      return if diagnostic['summary'].to_s.empty?
+
+      message = "Error: #{diagnostic['summary']}"
+      detail = diagnostic['detail']
+
+      detail.to_s.empty? ? message : "#{message}\n#{detail}"
+    end
+
     def parse_params(params)
       params.is_a?(String) ? [params] : params
     end
 
     def tofu_execute(action, params = [], &block)
-      execute [base_command, action].concat(default_params).concat(params), &block
+      output = execute [base_command, action].concat(default_params).concat(params), &block
+      return JSON.parse(output) if %w[output show].include?(action) && !block
+
+      output
     end
 
     def command(cmd)
@@ -141,12 +200,18 @@ module ForemanOpentofu
       end
       ret = $CHILD_STATUS
       Rails.logger.info "#{cmd} returned #{ret.inspect}"
-      Rails.logger.debug output.to_s
+      filtered_output = filter_sensitive_output(output)
+      Rails.logger.debug filtered_output
+
+      readable = readable_output(filtered_output)
+
       unless ret.success?
-        Rails.logger.error "Command failed with output: #{output}"
+        Rails.logger.error "Command failed with output: #{readable}"
         # TODO: do we need to use a specific exception-type here?
-        raise "command failed with code #{ret.exitstatus}:\n#{output}"
+        raise error_summary(output)
       end
+
+      Rails.logger.info readable unless readable.empty?
 
       output
     end

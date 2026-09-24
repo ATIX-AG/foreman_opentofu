@@ -1,0 +1,9 @@
+{"@level":"info","@message":"OpenTofu 1.12.6","@module":"tofu.ui","tofu":"1.12.6","type":"version","ui":"1.2"}
+{"@level":"info","@message":"hcloud_server.node1: Plan to create","@module":"tofu.ui","change":{"resource":{"addr":"hcloud_server.node1","resource_type":"hcloud_server","resource_name":"node1"},"action":"create"},"type":"planned_change"}
+{"@level":"info","@message":"hcloud_volume.volumes[\"0\"]: Plan to create","@module":"tofu.ui","change":{"resource":{"addr":"hcloud_volume.volumes[\"0\"]","resource_type":"hcloud_volume","resource_name":"volumes","resource_key":"0"},"action":"create"},"type":"planned_change"}
+{"@level":"info","@message":"hcloud_server.node1: Creating...","@module":"tofu.ui","type":"apply_start"}
+{"@level":"info","@message":"hcloud_server.node1: Creation complete after 24s [id=SERVER_ID]","@module":"tofu.ui","type":"apply_complete"}
+{"@level":"info","@message":"hcloud_volume.volumes[\"0\"]: Creating...","@module":"tofu.ui","type":"apply_start"}
+{"@level":"info","@message":"hcloud_volume.volumes[\"0\"]: Creation errored after 0s","@module":"tofu.ui","type":"apply_errored"}
+{"@level":"warn","@message":"Warning: Value derived from a deprecated source","@module":"tofu.ui","diagnostic":{"severity":"warning","summary":"Value derived from a deprecated source","detail":"Unused attribute, consider removing it from your configuration."},"type":"diagnostic"}
+{"@level":"error","@message":"Error: invalid input in field 'size': Must be between 10 and 10240.","@module":"tofu.ui","diagnostic":{"severity":"error","summary":"invalid input in field 'size': Must be between 10 and 10240.","detail":"","address":"hcloud_volume.volumes[\"0\"]"},"type":"diagnostic"}

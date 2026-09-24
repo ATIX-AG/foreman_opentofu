@@ -15,10 +15,10 @@ module ForemanOpentofu
       assert_instance_of ComputeVM, vm
     end
 
-    test '#find_vm_by_uuid wraps exceptions' do
+    test '#find_vm_by_uuid raises Foreman exceptions' do
       @executor.stubs(:run_output).raises(StandardError.new('boom'))
 
-      assert_raises(Foreman::WrappedException) do
+      assert_raises(Foreman::Exception) do
         @nutanix_cr.find_vm_by_uuid('uuid-1')
       end
     end
@@ -197,12 +197,19 @@ module ForemanOpentofu
         ], captured_args[:interfaces]
       end
 
-      test 'wraps exceptions' do
-        @executor.stubs(:run_create).with(cleanup_on_failure: true).raises(StandardError.new('boom'))
+      test 'adds operation context and preserves the original cause' do
+        original = StandardError.new("Error: Permission denied\nAccess forbidden")
+        @executor.stubs(:run_create).with(cleanup_on_failure: true).raises(original)
+        Foreman::Logging.expects(:exception).with("Caught #{@nutanix_cr.provider} error", original)
 
-        assert_raises(Foreman::WrappedException) do
+        error = assert_raises(Foreman::Exception) do
           @nutanix_cr.create_vm('name' => 'vm1')
         end
+
+        assert_instance_of Foreman::Exception, error
+        assert_equal "#{@nutanix_cr.provider} failed to create vm. Reason: Error: Permission denied\nAccess forbidden",
+          error.bare_message
+        assert_same original, error.cause
       end
     end
 
@@ -275,7 +282,7 @@ module ForemanOpentofu
       cr.stubs(:client).returns(@executor)
       @executor.expects(:run_output).returns('vm' => { 'name' => tf_state.name })
       @executor.expects(:run_create).with(power_only: true).returns('vm' => { 'power_state' => 'on' })
-      assert_raises(Foreman::WrappedException) { cr.stop_vm(tf_state.uuid) }
+      assert_raises(Foreman::Exception) { cr.stop_vm(tf_state.uuid) }
     end
 
     test 'stackit refuses power changes without VM output' do
@@ -284,7 +291,7 @@ module ForemanOpentofu
       cr.expects(:client).with('name' => tf_state.name).returns(@executor)
       @executor.expects(:run_output).returns({})
       @executor.expects(:run_create).never
-      assert_raises(Foreman::WrappedException) { cr.stop_vm(tf_state.uuid) }
+      assert_raises(Foreman::Exception) { cr.stop_vm(tf_state.uuid) }
     end
 
     test '#save_vm updates existing vm and returns ComputeVM without creating new TfState' do
@@ -312,14 +319,14 @@ module ForemanOpentofu
       end
     end
 
-    test '#save_vm wraps exceptions and does not create new TfState' do
+    test '#save_vm raises Foreman exceptions and does not create new TfState' do
       FactoryBot.create(:tf_state, uuid: 'uuid1', name: 'existing-vm')
       @nutanix_cr.stubs(:vm_compute_attributes_for).with('uuid1').returns({ 'cpu' => 2 })
 
       @executor.stubs(:run_create).with(raise_if_recreate: true).raises(StandardError.new('update failed'))
 
       assert_no_difference('ForemanOpentofu::TfState.count') do
-        assert_raises(Foreman::WrappedException) do
+        assert_raises(Foreman::Exception) do
           @nutanix_cr.save_vm('uuid1', { 'cpu' => 8 })
         end
       end
