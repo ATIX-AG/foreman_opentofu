@@ -114,6 +114,20 @@ module ForemanOpentofu
       vm_attrs
     end
 
+    def validate_vm!(vm_attrs, compute_resource)
+      attrs = vm_attrs.with_indifferent_access
+      validate_attribute_constraints!(attrs, compute_resource)
+      validate_provider_specific!(attrs, compute_resource)
+    end
+
+    def validate_provider_specific!(_attrs, _compute_resource)
+    end
+
+    def active_volumes(attrs, compute_resource)
+      disks = attrs[:volumes].presence || compute_resource&.default_volumes
+      active_collection(disks)
+    end
+
     def filter_resource_changes(resources)
       return [] if resources.blank?
 
@@ -142,6 +156,59 @@ module ForemanOpentofu
     end
 
     private
+
+    def validate_attribute_constraints!(attrs, compute_resource)
+      numeric_constraints.each do |attribute|
+        constraint_values(attribute, attrs, compute_resource).each do |values|
+          value = values.fetch(attribute['name'], attribute['default'])
+          next if (value.nil? || value == '') && !attribute['mandatory']
+
+          validate_numeric_constraint!(attribute, value)
+        end
+      end
+    end
+
+    def numeric_constraints
+      attributes.select { |attribute| attribute['type'] == 'number' && (attribute.key?('min') || attribute.key?('max')) }
+    end
+
+    def constraint_values(attribute, attrs, compute_resource)
+      case attribute['group']
+      when 'disk'
+        active_volumes(attrs, compute_resource)
+      when 'vm', nil
+        [default_attributes.to_h.with_indifferent_access.merge(attrs)]
+      else
+        []
+      end
+    end
+
+    def active_collection(collection)
+      collection = collection.values if collection.is_a?(Hash)
+      Array(collection).map(&:with_indifferent_access).reject { |entry| entry[:_delete].to_s == '1' }
+    end
+
+    def validate_numeric_constraint!(attribute, value)
+      field = [name, attribute['name']].join(' ')
+      raise ArgumentError, format(_('%<attribute>s must be present.'), attribute: field) if value.nil? || value == ''
+
+      number = constraint_number!(attribute, value, field)
+      raise ArgumentError, format(_('%<attribute>s must be greater than or equal to %<minimum>s.'), attribute: field, minimum: attribute['min']) if attribute['min'] && number < attribute['min']
+      raise ArgumentError, format(_('%<attribute>s must be less than or equal to %<maximum>s.'), attribute: field, maximum: attribute['max']) if attribute['max'] && number > attribute['max']
+    end
+
+    def constraint_number!(attribute, value, field)
+      if attribute['step'] == 1
+        raise ArgumentError, format(_('%<attribute>s must be a whole number.'), attribute: field) unless value.to_s.match?(/\A-?[0-9]+\z/)
+
+        return value.to_i
+      end
+
+      number = Float(value, exception: false) unless value.is_a?(String) && value != value.strip
+      raise ArgumentError, format(_('%<attribute>s must be a number.'), attribute: field) unless number&.finite?
+
+      number
+    end
 
     def normalize_attributes(input)
       Array(input).map do |attr|

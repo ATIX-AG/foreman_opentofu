@@ -1,7 +1,5 @@
 module ForemanOpentofu
   module VMCommandCollectionNormalization
-    private
-
     def normalize_vm_args_collections!(args)
       args[:image_id] = args[:image] if args.key?(:image)
       normalize_vm_boolean_args!(args)
@@ -12,6 +10,8 @@ module ForemanOpentofu
         args[collection] = normalize_collection_input(collection, raw)
       end
     end
+
+    private
 
     def normalize_vm_boolean_args!(args)
       vm_boolean_keys.each do |key|

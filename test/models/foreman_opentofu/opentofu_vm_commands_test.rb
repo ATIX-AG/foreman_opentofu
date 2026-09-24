@@ -146,7 +146,7 @@ module ForemanOpentofu
         @nutanix_cr.create_vm(
           'name' => 'vm1',
           'volumes' => {
-            '0' => { 'size' => '13', 'label' => 'disk0' },
+            '0' => { 'disk_size_mib' => '13', 'label' => 'disk0' },
           },
           'interfaces_attributes' => {
             '0' => { 'network_id' => 'net-1', 'adapter_type' => 'vmxnet3' },
@@ -154,7 +154,7 @@ module ForemanOpentofu
         )
 
         assert_kind_of Array, captured_args[:volumes]
-        assert_equal '13', captured_args[:volumes][0][:size]
+        assert_equal '13', captured_args[:volumes][0][:disk_size_mib]
         assert_equal 'disk0', captured_args[:volumes][0][:label]
 
         assert_kind_of Array, captured_args[:interfaces]
@@ -173,10 +173,10 @@ module ForemanOpentofu
         @nutanix_cr.create_vm(
           'name' => 'vm1',
           'volumes' => {
-            '0' => { 'size' => '13', 'label' => 'disk0' },
-            'new_volumes' => { 'size' => '99', 'label' => 'ignored-placeholder' },
-            'new_123' => { 'size' => '20', 'label' => 'disk1' },
-            '1' => { '_delete' => '1', 'size' => '30', 'label' => 'deleted-disk' },
+            '0' => { 'disk_size_mib' => '13', 'label' => 'disk0' },
+            'new_volumes' => { 'disk_size_mib' => '99', 'label' => 'ignored-placeholder' },
+            'new_123' => { 'disk_size_mib' => '20', 'label' => 'disk1' },
+            '1' => { '_delete' => '1', 'disk_size_mib' => '30', 'label' => 'deleted-disk' },
           },
           'interfaces_attributes' => {
             '0' => { 'network_id' => 'net-1', 'adapter_type' => 'vmxnet3' },
@@ -187,8 +187,8 @@ module ForemanOpentofu
         )
 
         assert_equal [
-          { size: '13', label: 'disk0' },
-          { size: '20', label: 'disk1' },
+          { disk_size_mib: '13', label: 'disk0' },
+          { disk_size_mib: '20', label: 'disk1' },
         ], captured_args[:volumes]
 
         assert_equal [
@@ -211,6 +211,47 @@ module ForemanOpentofu
           error.bare_message
         assert_same original, error.cause
       end
+    end
+
+    test '#create_vm validates defaults and normalized collections before execution' do
+      @nutanix_cr.stubs(:default_attributes).returns({ 'num_sockets' => 2 })
+      attrs = { name: 'vm1', num_sockets: 2, volumes: [{ disk_size_mib: '10' }] }
+      order = sequence('create validation')
+      @nutanix_cr.tofu_provider.expects(:validate_vm!).with(attrs, @nutanix_cr).in_sequence(order)
+      @nutanix_cr.expects(:client).with(attrs).in_sequence(order).returns(@executor)
+      @executor.expects(:run_create).with(cleanup_on_failure: true).returns({ 'id' => 'vm1' })
+
+      @nutanix_cr.create_vm('name' => 'vm1', 'volumes' => { '0' => { 'disk_size_mib' => '10' } })
+    end
+
+    test '#create_vm preserves validation failures without invoking the client' do
+      @nutanix_cr.expects(:client).never
+      @executor.expects(:run_create).never
+
+      error = assert_raises(ArgumentError) { @nutanix_cr.create_vm('name' => 'vm1', 'num_sockets' => 0) }
+      assert_match(/num_sockets must be/, error.message)
+    end
+
+    test '#save_vm validates merged normalized attributes' do
+      FactoryBot.create(:tf_state, uuid: 'uuid1', name: 'existing-vm')
+      @nutanix_cr.stubs(:vm_compute_attributes_for).with('uuid1').returns({ 'num_sockets' => 2, 'memory_size_mib' => 1024 })
+      attrs = { num_sockets: 4, memory_size_mib: 1024, volumes: [{ disk_size_mib: '10' }] }
+      order = sequence('update validation')
+      @nutanix_cr.tofu_provider.expects(:validate_vm!).with(attrs, @nutanix_cr).in_sequence(order)
+      @nutanix_cr.expects(:client).in_sequence(order).returns(@executor)
+      @executor.expects(:run_create).with(raise_if_recreate: true).returns({ 'id' => 'uuid1' })
+
+      @nutanix_cr.save_vm('uuid1', 'num_sockets' => 4, 'volumes' => { '0' => { 'disk_size_mib' => '10' } })
+    end
+
+    test '#save_vm preserves validation failures without invoking the client' do
+      FactoryBot.create(:tf_state, uuid: 'uuid1', name: 'existing-vm')
+      @nutanix_cr.stubs(:vm_compute_attributes_for).with('uuid1').returns({ 'num_sockets' => 2 })
+      @nutanix_cr.expects(:client).never
+      @executor.expects(:run_create).never
+
+      error = assert_raises(ArgumentError) { @nutanix_cr.save_vm('uuid1', 'num_sockets' => 0) }
+      assert_match(/num_sockets must be/, error.message)
     end
 
     test '#destroy_vm deletes tf_state' do

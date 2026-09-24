@@ -29,9 +29,11 @@ module ForemanOpentofu
     end
 
     def create_vm(args = {})
+      args = default_attributes.merge(args).to_h.symbolize_keys
+      normalize_vm_args_collections!(args)
+      tofu_provider.validate_vm!(args, self)
+
       vm_command_errors('create vm') do
-        args = default_attributes.merge(args).to_h.symbolize_keys
-        normalize_vm_args_collections!(args)
         executor = client(args)
         output = executor.run_create(cleanup_on_failure: true)
         ComputeVM.new(self, output)
@@ -51,10 +53,12 @@ module ForemanOpentofu
       old_attrs = vm_compute_attributes_for(uuid).to_h.deep_stringify_keys
       tf_state = TfState.find_by(uuid: uuid)
       raise StandardError, "VM with UUID #{uuid} does not exist" unless tf_state
+      new_attrs = attrs.to_h.deep_stringify_keys
+      merged_attrs = old_attrs.merge(new_attrs).deep_symbolize_keys
+      normalize_vm_args_collections!(merged_attrs)
+      tofu_provider.validate_vm!(merged_attrs, self)
+
       vm_command_errors('update vm') do
-        new_attrs = attrs.to_h.deep_stringify_keys
-        merged_attrs = old_attrs.merge(new_attrs).deep_symbolize_keys
-        normalize_vm_args_collections!(merged_attrs)
         data = client({ 'name' => tf_state.name }.merge(merged_attrs)).run_create(raise_if_recreate: true)
         ComputeVM.new(self, data)
       end

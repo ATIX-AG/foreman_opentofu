@@ -15,7 +15,13 @@
   <% when 'bool' %>
     <%= checkbox_f f, attr['name'].to_sym, common_options %>
   <% when 'number' %>
-    <%= counter_f f, attr['name'].to_sym, common_options %>
+    <% number_options = common_options.merge(attr.slice('min', 'max', 'step').symbolize_keys)
+       default_value = attr['default']
+       if default_value.nil? && attr['min'].present? && attr['max'].present?
+         default_value = attr['min'] unless 0.between?(attr['min'].to_f, attr['max'].to_f)
+       end
+       number_options[:value] = default_value if f.object.public_send(attr['name']).blank? && !default_value.nil? %>
+    <%= counter_f f, attr['name'].to_sym, number_options %>
   <% when 'select' %>
     <% if attr.key? 'options' %>
       <% if attr['options'].is_a?(Hash) && attr['options'].key?('data_source') -%>
