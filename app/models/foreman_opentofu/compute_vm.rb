@@ -21,6 +21,17 @@ module ForemanOpentofu
       self['status'] || self['power'] || self['power_state']
     end
 
+    def state
+      power
+    end
+
+    def reload
+      refreshed = @provider.find_vm_by_uuid(self['identity'])
+      @attributes = refreshed.to_h.deep_stringify_keys
+      define_dynamic_readers!
+      self
+    end
+
     # TODO: add definitions for different power on/off values
     def ready?
       power.to_s == 'on' || power.to_s == 'running'
@@ -74,6 +85,17 @@ module ForemanOpentofu
       # TODO: I guess we have nothing to wait for
       # and we need to change the context of the given block
       instance_eval(&block)
+    end
+
+    # Foreman's MAC orchestration expects NIC objects with attribute readers.
+    def interfaces
+      value = attribute_value('interfaces_attributes') || attribute_value('interfaces') || []
+      value = value.sort_by { |key, _| key.to_i }.map(&:last) if value.is_a?(Hash)
+      Array(value).map { |attrs| OpenStruct.new(attrs) }
+    end
+
+    def select_nic(nics, nic)
+      @provider.tofu_provider.select_nic_for_mac(nics, nic)
     end
 
     def volumes_attributes

@@ -109,6 +109,23 @@ module ForemanOpentofu
       assert_snapshot self, 'vm_attributes', block
     end
 
+    test 'vm_attributes skips symbol keys using string names' do
+      cr = FactoryBot.build(:opentofu_stackit_cr)
+      source = ::Foreman::Renderer::Source::String.new(
+        name: 'Parameter',
+        content: "<%= vm_attributes(['project_id']) %>"
+      )
+      scope = ::Foreman::Renderer.get_scope(variables: {
+        cr_attrs: { project_id: 'project-1', machine_type: 'g2i.1' },
+        compute_resource: cr,
+      })
+
+      block = ::Foreman::Renderer.render(source, scope)
+
+      assert_not_includes block, 'project_id'
+      assert_includes block, 'machine_type = "g2i.1"'
+    end
+
     test 'build_disks renders provider-defined resource snippets' do
       cr = stub(default_volumes: [])
       cr.stubs(:render_disk).with do |disk, render_scope, index|

@@ -124,10 +124,21 @@ module ForemanOpentofu
       result
     end
 
+    # Whether the NIC renderer emits resources for the complete collection.
+    def nic_renderer_collection?
+      false
+    end
+
     # Whether disk renderer emits one collection resource for all disks (for_each)
     # instead of one resource block per disk entry.
     def disk_renderer_collection?
       false
+    end
+
+    # Some providers need user-selected IDs before they can plan a VM. Their
+    # initial Foreman form must be built from local attributes instead.
+    def plan_on_new_vm?
+      true
     end
 
     private

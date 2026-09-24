@@ -1,6 +1,7 @@
 module ForemanOpentofu
   module OpentofuVMCommands
     include ForemanOpentofu::VMCommandCollectionNormalization
+    include ForemanOpentofu::PowerCommands
 
     def find_vm_by_uuid(uuid)
       vm_command_errors('find vm') do
@@ -17,6 +18,8 @@ module ForemanOpentofu
         args = default_attributes.merge(args).to_h.symbolize_keys
         normalize_vm_args_collections!(args)
         args = prefill_mandatory_attributes(args).merge(args)
+        return ComputeVM.new(self, args.deep_stringify_keys) unless tofu_provider.plan_on_new_vm?
+
         executor = client(args)
         data = executor.run_new
         attrs = data['resource_changes'].first['change']['after'] || {}
@@ -42,16 +45,6 @@ module ForemanOpentofu
 
       Rails.logger.info "Deleting tfstate for #{tf_state&.name}"
       tf_state.destroy
-    end
-
-    def start_vm(name)
-      output = client({ 'name' => name, 'power_state' => 'on' }).run_create
-      output['vm']['power_state'] == 'on'
-    end
-
-    def stop_vm(name)
-      output = client({ 'name' => name, 'power_state' => 'off' }).run_create
-      output['vm']['power_state'] == 'off'
     end
 
     def save_vm(uuid, attrs)

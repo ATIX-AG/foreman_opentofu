@@ -6,6 +6,8 @@ module Orchestration
       def match_macs_to_nics(fog_attr)
         return super unless compute_resource.is_a?(ForemanOpentofu::Tofu)
 
+        return super if compute_resource.tofu_provider.respond_to?(:select_nic_for_mac)
+
         interfaces.select(&:physical?).each do |nic|
           mac = vm.send(fog_attr)
           logger.debug "Orchestration::Compute: nic #{nic.inspect} assigned to #{vm.inspect}"

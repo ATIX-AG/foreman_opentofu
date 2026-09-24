@@ -74,9 +74,59 @@ module ForemanOpentofu
         @nutanix_cr.expects(:client).with({ cluster_uuid: 'some_uuid', name: 'vm1' }).returns(@executor)
         @nutanix_cr.new_vm('name' => 'vm1')
       end
+
+      test 'stackit builds an empty form without invoking OpenTofu' do
+        stackit_cr = FactoryBot.build_stubbed(:opentofu_stackit_cr)
+        stackit_cr.expects(:client).never
+
+        vm = stackit_cr.new_vm
+
+        assert_instance_of ComputeVM, vm
+        assert_not vm.persisted?
+        assert_equal 64, vm.boot_volume_size
+        assert_not vm.assign_public_ip
+        assert_equal 'eu01', vm.region
+        assert_nil vm.network_id
+        assert_nil vm.security_group_id
+        assert_equal '', vm.machine_type
+      end
+
+      test 'stackit preserves compute profile values while building the form locally' do
+        stackit_cr = FactoryBot.build_stubbed(:opentofu_stackit_cr)
+        stackit_cr.expects(:client).never
+
+        vm = stackit_cr.new_vm(
+          'name' => 'stackit-vm',
+          'machine_type' => 'g2i.1',
+          'region' => 'eu02',
+          'network_id' => '11111111-1111-4111-8111-111111111111',
+          'security_group_id' => '22222222-2222-4222-8222-222222222222',
+          'boot_volume_size' => 80,
+          'assign_public_ip' => '0'
+        )
+
+        assert_equal 'stackit-vm', vm.name
+        assert_equal 'g2i.1', vm.machine_type
+        assert_equal 'eu02', vm.region
+        assert_equal '11111111-1111-4111-8111-111111111111', vm.network_id
+        assert_equal '22222222-2222-4222-8222-222222222222', vm.security_group_id
+        assert_equal 80, vm.boot_volume_size
+        assert_not vm.assign_public_ip
+        assert_not vm.persisted?
+      end
     end
 
     context '#create_vm' do
+      test 'stackit still invokes OpenTofu on actual creation' do
+        stackit_cr = FactoryBot.build_stubbed(:opentofu_stackit_cr)
+        stackit_cr.expects(:client).with(has_entries(name: 'stackit-vm')).returns(@executor)
+        @executor.expects(:run_create).with(cleanup_on_failure: true).returns({ 'identity' => 'server-id' })
+
+        vm = stackit_cr.create_vm('name' => 'stackit-vm')
+
+        assert_equal 'server-id', vm['identity']
+      end
+
       test 'returns ComputeVM' do
         @executor.stubs(:run_create).with(cleanup_on_failure: true).returns({ 'id' => 'vm1' })
 
@@ -187,6 +237,54 @@ module ForemanOpentofu
       )
 
       assert @nutanix_cr.stop_vm('vm1')
+    end
+
+    test 'stackit power actions accept UUID or name and reuse the complete VM output' do
+      cr = FactoryBot.build_stubbed(:opentofu_stackit_cr)
+      tf_state = FactoryBot.create(:tf_state, uuid: 'stackit-uuid', name: 'stackit-vm')
+      inputs = {
+        'region' => 'eu02', 'machine_type' => 'g2i.1', 'image_id' => 'image-1',
+        'interfaces_attributes' => { '0' => { 'network_id' => 'generated-network', 'managed_network' => true } },
+        'volumes_attributes' => { '2' => { 'name' => 'data', 'size' => 80, 'performance_class' => nil } },
+        'user_data' => '#cloud-config', 'assign_public_ip' => true
+      }
+      reader = mock('state reader')
+      cr.expects(:client).with('name' => tf_state.name).twice.returns(reader)
+      reader.expects(:run_output).twice.returns(
+        'vm' => inputs.except('interfaces_attributes', 'volumes_attributes'),
+        'interfaces_attributes' => inputs['interfaces_attributes'],
+        'volumes_attributes' => inputs['volumes_attributes']
+      )
+      %w[off on].each do |state|
+        writer = mock("power #{state}")
+        cr.expects(:client).with(inputs.merge('name' => tf_state.name, 'power_state' => state)).returns(writer)
+        writer.expects(:run_create).with(power_only: true).returns('vm' => { 'power_state' => state })
+      end
+      stopped_vm = cr.stop_vm(tf_state.uuid)
+      started_vm = cr.start_vm(tf_state.name)
+      assert_instance_of ComputeVM, stopped_vm
+      assert_instance_of ComputeVM, started_vm
+      assert_equal 'off', stopped_vm.power
+      assert_equal 'on', started_vm.power
+      assert_not inputs.key?('power_state')
+    end
+
+    test 'stackit does not report success when the returned power state differs' do
+      cr = FactoryBot.build_stubbed(:opentofu_stackit_cr)
+      tf_state = FactoryBot.create(:tf_state, uuid: 'power-uuid', name: 'power-vm')
+      cr.stubs(:client).returns(@executor)
+      @executor.expects(:run_output).returns('vm' => { 'name' => tf_state.name })
+      @executor.expects(:run_create).with(power_only: true).returns('vm' => { 'power_state' => 'on' })
+      assert_raises(Foreman::WrappedException) { cr.stop_vm(tf_state.uuid) }
+    end
+
+    test 'stackit refuses power changes without VM output' do
+      cr = FactoryBot.build_stubbed(:opentofu_stackit_cr)
+      tf_state = FactoryBot.create(:tf_state, uuid: 'legacy-uuid', name: 'legacy-vm')
+      cr.expects(:client).with('name' => tf_state.name).returns(@executor)
+      @executor.expects(:run_output).returns({})
+      @executor.expects(:run_create).never
+      assert_raises(Foreman::WrappedException) { cr.stop_vm(tf_state.uuid) }
     end
 
     test '#save_vm updates existing vm and returns ComputeVM without creating new TfState' do

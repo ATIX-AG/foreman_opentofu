@@ -120,6 +120,33 @@ module ForemanOpentofu
       end
     end
 
+    test 'power action aborts before apply when the plan changes other resources' do
+      stub_opentofu_tmp_dir do
+        @compute_resource.stubs(:tofu_provider).returns(ProviderTypeManager.find('stackit'))
+        @app_mock.expects(:show_plan).returns('resource_changes' => [
+                                                { 'address' => 'stackit_network.interfaces["0"]', 'change' => { 'actions' => ['delete'] } },
+                                              ])
+        @app_mock.expects(:apply).never
+        @app_mock.expects(:destroy).never
+        assert_raises(RuntimeError) { @executor.run_create(power_only: true) }
+      end
+    end
+
+    test 'power action applies a plan containing only a power update' do
+      stub_opentofu_tmp_dir do
+        @compute_resource.stubs(:tofu_provider).returns(ProviderTypeManager.find('stackit'))
+        @app_mock.expects(:show_plan).returns('resource_changes' => [
+                                                { 'address' => 'stackit_server.node1', 'change' => {
+                                                  'actions' => ['update'],
+                                                  'before' => { 'desired_status' => 'active' },
+                                                  'after' => { 'desired_status' => 'inactive' },
+                                                } },
+                                              ])
+        @app_mock.expects(:apply)
+        assert_not_nil @executor.run_create(power_only: true)
+      end
+    end
+
     test '#run_create destroys created resources when apply fails' do
       stub_opentofu_tmp_dir do
         failure = RuntimeError.new('apply failed')
