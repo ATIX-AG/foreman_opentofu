@@ -80,13 +80,13 @@ module ForemanOpentofu
       yield
     rescue StandardError => e
       Foreman::Logging.exception("Caught #{provider} error", e)
-      raise ::Foreman::WrappedException.new(
-        e,
+      raise ::Foreman::Exception.new(
         N_(
-          "Foreman could not find a required %<provider>s resource in #{method_name}. " \
-          'Check if Foreman has the required permissions and the resource exists. Reason: %<error>s'
+          '%<provider>s failed to %<method>s. Reason: %<error>s'
         ),
-        { provider: provider, error: e.message }
+        provider: provider,
+        method: method_name,
+        error: e.message
       )
     end
 
