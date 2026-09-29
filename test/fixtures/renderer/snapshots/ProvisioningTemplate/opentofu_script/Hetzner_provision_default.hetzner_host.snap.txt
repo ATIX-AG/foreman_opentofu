@@ -26,6 +26,13 @@ provider "hcloud" {
 resource "hcloud_server" "node1" {
   name        = "hetzner_host"
 
+  # User data is creation-only. The provider returns its hash in state, which
+  # might change on edit, resulting in replacing the server. Ignore user data
+  # attribute changes.
+  lifecycle {
+    ignore_changes = [user_data]
+  }
+
   
 server_type = "cx23"
 
