@@ -34,6 +34,13 @@ data "hcloud_ssh_key" "deploy_key" {
 resource "hcloud_server" "node1" {
   name        = "<%= @host_name %>"
 
+  # User data is creation-only. The provider returns its hash in state, which
+  # might change on edit, resulting in replacing the server. Ignore user data
+  # attribute changes.
+  lifecycle {
+    ignore_changes = [user_data]
+  }
+
   <%= vm_attributes(['name', 'image']) %>
 
 <%- if @cr_attrs['image_id'].present? %>
