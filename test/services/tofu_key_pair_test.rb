@@ -14,11 +14,20 @@ module ForemanOpentofu
       assert_equal key_pair.name, subject.name
     end
 
-    test 'generates key' do
-      subject.generate
+    test 'generates key using Foreman SSH key generator' do
+      skip 'Foreman SSH key generator is unavailable' unless defined?(Foreman::Provision::SshKey) && Foreman::Provision::SshKey.respond_to?(:generate)
 
-      assert subject.private_key.starts_with? '-----BEGIN PRIVATE KEY-----'
+      subject.generate
+      assert subject.private_key.starts_with? '-----BEGIN OPENSSH PRIVATE KEY-----'
       assert subject.public_key.starts_with? 'ssh-rsa '
+    end
+
+    test 'generates key using OpenSSL when Foreman SSH key generator is unavailable' do
+      skip 'Foreman SSH key generator is available; skipping legacy OpenSSL test' if defined?(Foreman::Provision::SshKey) && Foreman::Provision::SshKey.respond_to?(:generate)
+
+      subject.generate
+      assert subject.private_key.starts_with?('-----BEGIN PRIVATE KEY-----')
+      assert subject.public_key.starts_with?('ssh-rsa ')
     end
 
     test 'destroys key' do
