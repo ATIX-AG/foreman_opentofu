@@ -8,12 +8,16 @@ description: |
   Region is configured on the VM or compute profile (default eu01).
 -%>
 
-<%= terraform_block({ stackit: { source: 'stackitcloud/stackit', version: '= 0.115.0' } }) %>
+<%= terraform_block({ stackit: { source: 'stackitcloud/stackit', version: '= 0.119.0' } }) %>
 
 provider "stackit" {
   enable_beta_resources = true
   default_region      = <%= to_hcl(@cr_attrs['region'].presence || 'eu01') %>
   service_account_key = var.password
+}
+
+locals {
+  project_id = var.username
 }
 
 <% if @resource %>
@@ -31,10 +35,7 @@ locals {
   boot_volume_size  = <%= to_hcl(format_value(@cr_attrs['boot_volume_size'].presence || 64, 'number')) %>
   assign_public_ip  = <%= to_hcl(format_value(@cr_attrs['assign_public_ip'] || false, 'bool')) %>
   image_id          = <%= to_hcl(@cr_attrs['image_id'].to_s) %>
-  project_id        = var.username
 }
-
-
 
 resource "stackit_server" "node1" {
   desired_status = <%= to_hcl(@compute_resource.tofu_provider.desired_status(@cr_attrs)) %>

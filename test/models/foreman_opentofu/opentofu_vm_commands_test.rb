@@ -74,46 +74,6 @@ module ForemanOpentofu
         @nutanix_cr.expects(:client).with({ cluster_uuid: 'some_uuid', name: 'vm1' }).returns(@executor)
         @nutanix_cr.new_vm('name' => 'vm1')
       end
-
-      test 'stackit builds an empty form without invoking OpenTofu' do
-        stackit_cr = FactoryBot.build_stubbed(:opentofu_stackit_cr)
-        stackit_cr.expects(:client).never
-
-        vm = stackit_cr.new_vm
-
-        assert_instance_of ComputeVM, vm
-        assert_not vm.persisted?
-        assert_equal 64, vm.boot_volume_size
-        assert_not vm.assign_public_ip
-        assert_equal 'eu01', vm.region
-        assert_nil vm.network_id
-        assert_nil vm.security_group_id
-        assert_equal '', vm.machine_type
-      end
-
-      test 'stackit preserves compute profile values while building the form locally' do
-        stackit_cr = FactoryBot.build_stubbed(:opentofu_stackit_cr)
-        stackit_cr.expects(:client).never
-
-        vm = stackit_cr.new_vm(
-          'name' => 'stackit-vm',
-          'machine_type' => 'g2i.1',
-          'region' => 'eu02',
-          'network_id' => '11111111-1111-4111-8111-111111111111',
-          'security_group_id' => '22222222-2222-4222-8222-222222222222',
-          'boot_volume_size' => 80,
-          'assign_public_ip' => '0'
-        )
-
-        assert_equal 'stackit-vm', vm.name
-        assert_equal 'g2i.1', vm.machine_type
-        assert_equal 'eu02', vm.region
-        assert_equal '11111111-1111-4111-8111-111111111111', vm.network_id
-        assert_equal '22222222-2222-4222-8222-222222222222', vm.security_group_id
-        assert_equal 80, vm.boot_volume_size
-        assert_not vm.assign_public_ip
-        assert_not vm.persisted?
-      end
     end
 
     context '#create_vm' do

@@ -149,12 +149,6 @@ module ForemanOpentofu
       false
     end
 
-    # Some providers need user-selected IDs before they can plan a VM. Their
-    # initial Foreman form must be built from local attributes instead.
-    def plan_on_new_vm?
-      true
-    end
-
     private
 
     def validate_attribute_constraints!(attrs, compute_resource)

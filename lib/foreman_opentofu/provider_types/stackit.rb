@@ -11,10 +11,6 @@ ForemanOpentofu::ProviderTypeManager.register('stackit') do
     { name: 'password', type: 'password', mandatory: true, label: 'Service account key' },
   ]
 
-  def plan_on_new_vm?
-    false
-  end
-
   def provided_attributes
     { ip: :vm_ip_address, mac: :mac }
   end
@@ -51,13 +47,6 @@ ForemanOpentofu::ProviderTypeManager.register('stackit') do
 
   def nic_renderer_collection?
     true
-  end
-
-  # Stackit exposes individual images by UUID rather than an image-list data
-  # source. An empty collection makes Foreman's image form render a manual UUID
-  # field instead of a select box.
-  def available_images(_compute_resource)
-    []
   end
 
   # Prepare all NICs together so an empty form produces one default network.
@@ -148,8 +137,18 @@ ForemanOpentofu::ProviderTypeManager.register('stackit') do
   end
 
   self.provider_attrs = [
-    { name: 'machine_type', type: 'string', group: 'vm', mandatory: true,
-      label: 'Machine type', help: 'Stackit machine type available in your project, for example g2i.1.' },
+    { name: 'machine_type', type: 'select', group: 'vm', mandatory: true,
+      label: 'Machine type', options: {
+        data_source: {
+          name: 'stackit_machine_types',
+          arguments: { project_id: :'local.project_id' },
+        },
+        entity: {
+          id: 'name',
+          name: 'name',
+        },
+        output_path_postfix: 'results',
+      } },
     { name: 'region', type: 'string', group: 'vm', mandatory: true, default: 'eu01',
       label: 'Region', help: 'Stackit region identifier, for example eu01.' },
     { name: 'availability_zone', type: 'string', group: 'vm', mandatory: false,
@@ -172,6 +171,18 @@ ForemanOpentofu::ProviderTypeManager.register('stackit') do
       label: 'Availability zone' },
     { name: 'performance_class', type: 'string', group: 'disk', mandatory: false,
       label: 'Performance class' },
+    { name: 'available_images', type: 'select',
+      label: 'Base-OS-Image', options: {
+        data_source: {
+          name: 'stackit_images',
+          arguments: { project_id: :'local.project_id' },
+        },
+        entity: {
+          id: 'image_id',
+          name: 'name',
+        },
+        output_path_postfix: 'results',
+      } },
   ]
 
   self.nic_renderer = proc do |_nic, _index = 0|
