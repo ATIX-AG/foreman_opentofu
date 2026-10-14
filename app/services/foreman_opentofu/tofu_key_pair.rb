@@ -11,9 +11,15 @@ module ForemanOpentofu
     end
 
     def generate
-      key = OpenSSL::PKey::RSA.generate(Setting[:tofu_ssh_key_bits])
-      @private_key = key.private_to_pem
-      @public_key = "#{key.ssh_type} #{[key.to_blob].pack('m0')}"
+      if defined?(Foreman::Provision::SshKey) && Foreman::Provision::SshKey.respond_to?(:generate)
+        key = Foreman::Provision::SshKey.generate(type: 'rsa', bits: Setting[:tofu_ssh_key_bits])
+        @private_key = key.private_key
+        @public_key = key.public_key
+      else
+        key = OpenSSL::PKey::RSA.generate(Setting[:tofu_ssh_key_bits])
+        @private_key = key.private_to_pem
+        @public_key = "#{key.ssh_type} #{[key.to_blob].pack('m0')}"
+      end
     end
 
     def destroy
