@@ -18,7 +18,6 @@ module ForemanOpentofu
         args = default_attributes.merge(args).to_h.symbolize_keys
         normalize_vm_args_collections!(args)
         args = prefill_mandatory_attributes(args).merge(args)
-        return ComputeVM.new(self, args.deep_stringify_keys) unless tofu_provider.plan_on_new_vm?
 
         executor = client(args)
         data = executor.run_new

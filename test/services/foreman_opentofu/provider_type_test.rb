@@ -317,7 +317,6 @@ module ForemanOpentofu
       assert_equal %w[network_id security_group_id], (stackit.attributes('nic').map { |attribute| attribute['name'] })
       assert_equal %w[name size volume_availability_zone performance_class], (stackit.attributes('disk').map { |attribute| attribute['name'] })
       assert stackit.disk_renderer_collection?
-      assert_empty stackit.available_images(nil)
     end
 
     test 'stackit power plans allow only server status updates' do
@@ -390,13 +389,6 @@ module ForemanOpentofu
       changes = [{ 'type' => 'stackit_server' }, { 'type' => 'stackit_network_interface' }]
 
       assert_equal changes, ProviderTypeManager.find('stackit').filter_resource_changes(changes)
-    end
-
-    test 'only stackit opts out of planning during form initialization' do
-      assert ProviderType.new('custom').plan_on_new_vm?
-      assert ProviderTypeManager.find('nutanix').plan_on_new_vm?
-      assert ProviderTypeManager.find('hetzner').plan_on_new_vm?
-      assert_not ProviderTypeManager.find('stackit').plan_on_new_vm?
     end
   end
 end

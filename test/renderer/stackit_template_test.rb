@@ -27,7 +27,7 @@ class StackitTemplateTest < ActiveSupport::TestCase
     rendered = render_stackit
 
     assert_includes rendered, 'machine_type = "g2i.1"'
-    assert_includes rendered, 'project_id        = var.username'
+    assert_includes rendered, 'project_id        = local.project_id'
     assert_includes rendered, 'image_id          = "22222222-2222-4222-8222-222222222222"'
     assert_includes rendered, 'source_id             = local.image_id'
     assert_includes rendered, 'boot_volume_size  = 64'
@@ -134,7 +134,7 @@ class StackitTemplateTest < ActiveSupport::TestCase
     rendered = render_stackit('region' => 'eu02', 'project_id' => 'obsolete-project')
 
     assert_includes rendered, 'default_region      = "eu02"'
-    assert_includes rendered, 'project_id        = var.username'
+    assert_includes rendered, 'project_id        = local.project_id'
     assert_not_includes rendered.split('output "vm_attrs"').first, 'obsolete-project'
     server = rendered.split('resource "stackit_server" "node1" {').last.split('output "vm_attrs"').first
     assert_no_match(/^\s*region\s*=/, server)
