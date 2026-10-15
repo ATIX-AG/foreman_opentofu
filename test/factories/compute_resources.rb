@@ -2,6 +2,14 @@ FactoryBot.modify do
   factory :compute_resource do
     provider { 'Tofu' }
 
+    trait :with_template do
+      attrs do
+        {
+          opentofu_template_id: FactoryBot.create(:provisioning_template, template_kind: TemplateKind.find_or_create_by(name: 'opentofu_script')).id,
+        }
+      end
+    end
+
     trait :opentofu_hetzner do
       opentofu_provider { :hetzner }
       user { 'dummy' }
@@ -14,6 +22,7 @@ FactoryBot.modify do
       password { '{"credentials":{"privateKey":"test-only"}}' }
       user { '11111111-1111-4111-8111-111111111111' }
       url { nil }
+      after(:build) { |cr| cr.stubs(:setup_key_pair) }
     end
 
     trait :opentofu_nutanix do
@@ -23,6 +32,10 @@ FactoryBot.modify do
       sequence(:url) { |n| "#{n}.example.com" }
       # uuid { 'vdatacenter' } # alias for datacenter
       # after(:build) { |cr| cr.stubs(:update_public_key) }
+    end
+
+    trait :no_keygen do
+      after(:build) { |cr| cr.stubs(:setup_key_pair) }
     end
   end
 end
