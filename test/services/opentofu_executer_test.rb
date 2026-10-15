@@ -226,7 +226,7 @@ module ForemanOpentofu
         password: @compute_resource.password,
         endpoint: @compute_resource.url,
       }
-      AppWrapper.expects(:new).with(kind_of(String), variables: expected_variables).returns(@app_mock)
+      AppWrapper.expects(:new).with(kind_of(String), variables: expected_variables, compute_resource: @compute_resource).returns(@app_mock)
 
       stub_opentofu_tmp_dir do
         @executor.run_test_connection
@@ -237,7 +237,7 @@ module ForemanOpentofu
       compute_resource = FactoryBot.build_stubbed(:opentofu_hetzner_cr)
       executor = OpentofuExecuter.new(compute_resource)
       executor.stubs(:render_template).returns('rendered template')
-      AppWrapper.expects(:new).with(kind_of(String), variables: { password: compute_resource.password }).returns(@app_mock)
+      AppWrapper.expects(:new).with(kind_of(String), variables: { password: compute_resource.password }, compute_resource: compute_resource).returns(@app_mock)
 
       stub_opentofu_tmp_dir do
         executor.run_test_connection

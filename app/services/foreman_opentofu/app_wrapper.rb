@@ -12,6 +12,7 @@ module ForemanOpentofu
     def initialize(workdir, opts = {})
       @workdir = workdir
       @variables = opts[:variables]
+      @compute_resource = opts[:compute_resource]
     end
 
     # rubocop:disable Style/SingleLineMethods
@@ -169,14 +170,25 @@ module ForemanOpentofu
       cmd.map { |item| "'#{item}'" }.append('2>&1').join(' ')
     end
 
-    def common_envvars
+    def http_proxy_vars
+      return {} unless @compute_resource&.http_proxy
+
       {
+        'http_proxy' => @compute_resource.http_proxy.full_url,
+        'https_proxy' => @compute_resource.http_proxy.full_url,
+        # add Foreman-FQDN to no_proxy to ensure TfState-API is not proxied
+        'no_proxy' => URI.split(Setting[:foreman_url])[2],
+      }
+    end
+
+    def common_envvars
+      http_proxy_vars.merge({
         'TF_PLUGIN_CACHE_DIR' => ForemanOpentofu::OPENTOFU_PLUGIN_CACHE_PATH,
         'TEMPDIR' => ForemanOpentofu::OPENTOFU_TMP_PATH,
         'TMPDIR' => ForemanOpentofu::OPENTOFU_TMP_PATH,
         'TMP' => ForemanOpentofu::OPENTOFU_TMP_PATH,
         'TEMP' => ForemanOpentofu::OPENTOFU_TMP_PATH,
-      }
+      })
     end
 
     def terraform_envvars

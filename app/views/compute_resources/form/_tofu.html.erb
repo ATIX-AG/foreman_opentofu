@@ -1,4 +1,6 @@
 <%= field_set_tag _("Common fields"), :id => "compute_ressource_common_field_set" do %>
+  <%= http_proxy_field f %>
+
   <%= select_f f,
                :opentofu_provider,
                ForemanOpentofu::ProviderTypeManager.enabled_provider_types,
