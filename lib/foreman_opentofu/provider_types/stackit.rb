@@ -156,8 +156,18 @@ ForemanOpentofu::ProviderTypeManager.register('stackit') do
     { name: 'boot_volume_size', type: 'number', group: 'vm', mandatory: true, default: 64,
       label: 'Boot volume size (GB)', min: 4, max: 16_000, step: 1,
       help: 'Must be between 4 and 16000 GB and at least the minimum disk size of the selected image.' },
-    { name: 'network_id', type: 'string', group: 'nic', mandatory: false,
-      label: 'Network ID', help: 'Optional UUID of an existing Stackit network. Leave blank to create one.' },
+    { name: 'network_id', type: 'select', group: 'nic', mandatory: false,
+      label: 'Network ID', help: 'Optional UUID of an existing Stackit network. Leave blank to create one.', options: {
+        data_source: {
+          name: 'stackit_networks',
+          arguments: { project_id: :'local.project_id' },
+        },
+        entity: {
+          id: 'network_id',
+          name: 'name',
+        },
+        output_path_postfix: 'results',
+      } },
     { name: 'security_group_id', type: 'string', group: 'nic', mandatory: false,
       label: 'Security group ID', help: 'Optional UUID of an existing security group.' },
     { name: 'assign_public_ip', type: 'bool', group: 'vm',
