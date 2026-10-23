@@ -16,3 +16,7 @@
   <td><%= _("Caching") %></td>
   <td><%= @compute_resource.caching_enabled ? _("Enabled") : _("Disabled") %></td>
 </tr>
+<tr>
+  <td><%= _('HTTP-Proxy') %></td>
+  <td><%= @compute_resource.http_proxy.present? ? link_to(@compute_resource.http_proxy, edit_http_proxy_path(@compute_resource.http_proxy)) : '' %></td>
+</tr>

@@ -26,7 +26,7 @@ module ForemanOpentofu
             f.write(@cr_attrs['user_data'])
           end
         end
-        tofu = AppWrapper.new(dir, variables: provider_variables)
+        tofu = AppWrapper.new(dir, variables: provider_variables, compute_resource: @compute_resource)
         @use_backend = %w[create destroy output keygen].include?(mode)
         @token = create_token(@host_name) if @use_backend
         tofu.main_configuration = render_template(mode)
