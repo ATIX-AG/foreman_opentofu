@@ -18,7 +18,15 @@ module ForemanOpentofu
     end
 
     def power
-      self['status'] || self['power'] || self['power_state']
+      translator = PowerTranslator.new(@provider)
+      raw_status = self[translator.attribute_name]
+      value = if raw_status.present?
+                translator.power_state(raw_status)
+              else
+                # Fallback to legacy keys
+                self['power_state'] || self['status'] || self['power']
+              end
+      value == :unknown ? value : value.to_s
     end
 
     def state
