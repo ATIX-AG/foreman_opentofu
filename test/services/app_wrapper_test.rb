@@ -2,13 +2,15 @@ require 'test_plugin_helper'
 
 module ForemanOpentofu
   class AppWrapperTest < ActiveSupport::TestCase
+    let(:compute_resource) { FactoryBot.create(:opentofu_hetzner_cr, :no_keygen, :with_template) }
     let(:app_wrapper) do
       AppWrapper.new(
         File.join('/tmp', "app_wrapper_test_#{rand(9999).to_s.rjust(4, '0')}"),
         variables: {
           user: 'admin',
           password: 'secret',
-        }
+        },
+        compute_resource: compute_resource
       )
     end
 
@@ -196,6 +198,19 @@ module ForemanOpentofu
       %w[TEMPDIR TMPDIR TMP TEMP].each do |var|
         assert_equal ForemanOpentofu::OPENTOFU_TMP_PATH, envvars[var]
       end
+    end
+
+    test 'http_proxy variables empty by default' do
+      assert_empty app_wrapper.send(:http_proxy_vars)
+    end
+
+    test 'http_proxy variables if present in compute_resource' do
+      compute_resource.http_proxy = FactoryBot.create(:http_proxy)
+
+      vars = app_wrapper.send(:http_proxy_vars)
+      assert_equal %w[http_proxy https_proxy no_proxy], vars.keys.sort
+      assert_equal compute_resource.http_proxy.full_url, vars['http_proxy']
+      assert_equal 'foreman.example.com', vars['no_proxy']
     end
 
     test 'create_variables_file()' do
