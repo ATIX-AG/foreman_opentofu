@@ -1,9 +1,16 @@
+require 'forwardable'
+require_relative 'power_translator'
 module ForemanOpentofu
   class ProviderType
+    extend Forwardable
+
     attr_reader :id, :name, :default_attributes, :default_interfaces, :default_volumes,
-      :connection_attrs
+      :connection_attrs, :power_mapping, :disallowed_states, :computed_metadata_keys
     attr_accessor :capabilities, :disk_renderer, :nic_renderer,
       :recreate_type_allow_list, :default_template
+
+    def_delegators :power_translator, :desired_status, :attribute_name,
+      :power_change_allowed?, :action_value, :power_state
 
     def initialize(id)
       @id = id.to_sym
@@ -11,6 +18,18 @@ module ForemanOpentofu
       @capabilities = [:build]
       @provider_attrs = []
       @connection_attrs = []
+      @computed_metadata_keys = %w[status]
+      @power_mapping = {
+        attribute: 'status',
+        values: { on: 'on', off: 'off' },
+        server: '',
+      }
+    end
+
+    def power_control(attribute:, server:, values: {})
+      @power_mapping[:attribute] = attribute.to_s
+      @power_mapping[:server] = server.to_s
+      @power_mapping[:values].merge!(values.transform_keys(&:to_sym))
     end
 
     def provider_attrs=(input)
@@ -208,6 +227,10 @@ module ForemanOpentofu
       Array(input).map do |attr|
         ActiveSupport::HashWithIndifferentAccess.new(attr)
       end
+    end
+
+    def power_translator
+      @power_translator ||= ::ForemanOpentofu::PowerTranslator.new(self)
     end
   end
 end

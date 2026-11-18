@@ -1,28 +1,36 @@
 module ForemanOpentofu
   module PowerCommands
     def start_vm(name)
-      return change_vm_power(name, 'on') if tofu_provider.respond_to?(:power_state_attributes)
-
-      output = client({ 'name' => name, 'power_state' => 'on' }).run_create
-      output['vm']['power_state'] == 'on'
+      change_vm_power(name, :on)
     end
 
     def stop_vm(name)
-      return change_vm_power(name, 'off') if tofu_provider.respond_to?(:power_state_attributes)
-
-      output = client({ 'name' => name, 'power_state' => 'off' }).run_create
-      output['vm']['power_state'] == 'off'
+      change_vm_power(name, :off)
     end
 
     private
 
-    def change_vm_power(identifier, state)
+    def change_vm_power(identifier, action)
       vm_command_errors('change power') do
         tf_state = power_state_record(identifier)
         output = power_state_output(tf_state)
-        result = client(power_state_arguments(output, tf_state.name, state)).run_create(power_only: true)
-        verify_power_result(result, state)
+
+        power_manager = PowerTranslator.new(tofu_provider)
+        target_value = power_manager.action_value(action)
+
+        arguments = ComputeVM.new(self, output).to_h
+        arguments[power_manager.attribute_name] = target_value
+        arguments['name'] = tf_state.name
+
+        result = client(arguments.merge!({ 'power_state' => action.to_s })).run_create(power_only: true)
+        verify_power_result(result, action)
       end
+    end
+
+    def verify_power_result(result, target_action)
+      vm = ComputeVM.new(self, result)
+      raise "OpenTofu did not return the requested power state for action #{target_action}" unless vm.power.to_s == target_action.to_s
+      vm
     end
 
     def power_state_record(identifier)
@@ -38,20 +46,6 @@ module ForemanOpentofu
       raise 'Power control requires VM output from the provisioning template.' unless valid
 
       output
-    end
-
-    def power_state_arguments(output, name, state)
-      arguments = ComputeVM.new(self, output).to_h
-      arguments.merge!(tofu_provider.power_state_attributes(state))
-      arguments['name'] = name
-      arguments
-    end
-
-    def verify_power_result(result, state)
-      vm = ComputeVM.new(self, result)
-      raise "OpenTofu did not return the requested power state #{state}" unless vm.power == state
-
-      vm
     end
   end
 end

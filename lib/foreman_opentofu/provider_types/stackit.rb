@@ -10,6 +10,10 @@ ForemanOpentofu::ProviderTypeManager.register('stackit') do
     { name: 'user', type: 'string', mandatory: true, label: 'Project ID' },
     { name: 'password', type: 'password', mandatory: true, label: 'Service account key' },
   ]
+  @computed_metadata_keys = %w[agent launched_at updated_at status]
+  power_control attribute: 'desired_status',
+    values: { on: 'active', off: 'inactive' },
+    server: 'stackit_server'
 
   def provided_attributes
     { ip: :vm_ip_address, mac: :mac }
@@ -17,22 +21,6 @@ ForemanOpentofu::ProviderTypeManager.register('stackit') do
 
   def vm_ready(vm)
     vm.ready?
-  end
-
-  def power_state_attributes(state)
-    { 'power_state' => state }
-  end
-
-  def desired_status(attributes)
-    { 'on' => 'active', 'off' => 'inactive' }.fetch(attributes['power_state'].presence || 'on')
-  end
-
-  # Only a power update is allowed during a start/stop action.
-  def power_change_allowed?(resource)
-    change = resource.fetch('change', {})
-    return true if harmless_power_change?(resource, change)
-
-    server_update?(resource, change) && comparable_plan(change, 'before') == comparable_plan(change, 'after')
   end
 
   def select_nic_for_mac(nics, nic)
@@ -58,20 +46,8 @@ ForemanOpentofu::ProviderTypeManager.register('stackit') do
     configured.presence || [fallback_interface(interfaces)]
   end
 
-  def harmless_power_change?(resource, change)
-    change['actions'] == ['no-op'] || resource['mode'] == 'data'
-  end
-
   def server_update?(resource, change)
     resource['address'] == 'stackit_server.node1' && change['actions'] == ['update']
-  end
-
-  def comparable_plan(change, direction)
-    values = change.fetch(direction, {}).dup
-    unknown = change.fetch('after_unknown', {})
-    ignored = ['desired_status'] + %w[agent created_at launched_at updated_at].select { |key| unknown[key] == true }
-    values.except!(*ignored)
-    comparable_agent(values, unknown)
   end
 
   def comparable_agent(values, unknown)
