@@ -39,6 +39,13 @@ module ForemanOpentofu
                 description: N_('Number of Bits for the SSH-Key required to provision hosts on image-based providers.')
             end
           end
+
+          # These actions use one-time-token authentication so tofu can report the TfState.
+          tests_to_skip 'AccessPermissionsTest' => [
+            'api/v2/tf_states/create should have a permission that grants access',
+            'api/v2/tf_states/destroy should have a permission that grants access',
+            'api/v2/tf_states/show should have a permission that grants access',
+          ]
         end
       end
     end
