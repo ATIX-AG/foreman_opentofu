@@ -181,8 +181,13 @@ module ForemanOpentofu
       }
     end
 
+    def cli_config_envvars
+      path = ForemanOpentofu::OPENTOFU_CLI_CONFIG_PATH
+      File.exist?(path) ? { 'TF_CLI_CONFIG_FILE' => path } : {}
+    end
+
     def common_envvars
-      http_proxy_vars.merge({
+      http_proxy_vars.merge(cli_config_envvars).merge({
         'TF_PLUGIN_CACHE_DIR' => ForemanOpentofu::OPENTOFU_PLUGIN_CACHE_PATH,
         'TEMPDIR' => ForemanOpentofu::OPENTOFU_TMP_PATH,
         'TMPDIR' => ForemanOpentofu::OPENTOFU_TMP_PATH,

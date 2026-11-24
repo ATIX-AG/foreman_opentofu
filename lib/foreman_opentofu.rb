@@ -7,4 +7,5 @@ module ForemanOpentofu
   OPENTOFU_MAIN_PATH = '/var/lib/foreman-opentofu'.freeze
   OPENTOFU_TMP_PATH = File.join(OPENTOFU_MAIN_PATH, 'tmp').freeze
   OPENTOFU_PLUGIN_CACHE_PATH = File.join(OPENTOFU_MAIN_PATH, 'plugin-cache').freeze
+  OPENTOFU_CLI_CONFIG_PATH = '/etc/foreman/tofurc'.freeze
 end
