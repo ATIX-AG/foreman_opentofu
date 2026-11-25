@@ -6,6 +6,8 @@ module ForemanOpentofu
       @nutanix_cr = FactoryBot.build_stubbed(:opentofu_nutanix_cr)
       @executor = mock('OpentofuExecuter')
       @nutanix_cr.stubs(:client).returns(@executor)
+      tf_state = stub(name: 'vm1', attributes: {})
+      @nutanix_cr.stubs(:power_state_record).with('vm1').returns(tf_state)
     end
 
     test '#find_vm_by_uuid returns ComputeVM' do
@@ -232,6 +234,7 @@ module ForemanOpentofu
     end
 
     test '#start_vm returns true when powered on' do
+      @executor.stubs(:run_output).returns('vm' => { 'power_state' => 'off' })
       @executor.stubs(:run_create).returns(
         'vm' => { 'power_state' => 'on' }
       )
@@ -240,6 +243,7 @@ module ForemanOpentofu
     end
 
     test '#stop_vm returns true when powered off' do
+      @executor.stubs(:run_output).returns('vm' => { 'power_state' => 'on' })
       @executor.stubs(:run_create).returns(
         'vm' => { 'power_state' => 'off' }
       )
@@ -265,7 +269,18 @@ module ForemanOpentofu
       )
       %w[off on].each do |state|
         writer = mock("power #{state}")
-        cr.expects(:client).with(inputs.merge('name' => tf_state.name, 'power_state' => state)).returns(writer)
+
+        power_manager = PowerTranslator.new(cr.tofu_provider)
+        target_value = power_manager.action_value(state)
+
+        cr.expects(:client).with(
+          inputs.merge(
+            'name' => tf_state.name,
+            'power_state' => state,
+            power_manager.attribute_name => target_value
+          )
+        ).returns(writer)
+
         writer.expects(:run_create).with(power_only: true).returns('vm' => { 'power_state' => state })
       end
       stopped_vm = cr.stop_vm(tf_state.uuid)
